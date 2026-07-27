@@ -11,6 +11,7 @@ import com.example.model.GameLevel
 import com.example.model.GameState
 import com.example.model.GridSnapshot
 import com.example.model.RomaniaItem
+import com.example.model.Tile
 import com.example.model.TileRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -110,11 +111,36 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (isGridEmpty(loadedState.grid)) {
             // New game start
             val initialGrid = createNewGameGrid()
-            _gameState.value = loadedState.copy(grid = initialGrid)
+            val initialTiles = syncTilesFromGrid(initialGrid)
+            _gameState.value = loadedState.copy(grid = initialGrid, tiles = initialTiles)
             repository.saveGameState(_gameState.value)
         } else {
-            _gameState.value = loadedState
+            val initialTiles = syncTilesFromGrid(loadedState.grid)
+            _gameState.value = loadedState.copy(tiles = initialTiles)
         }
+    }
+
+    fun syncTilesFromGrid(grid: List<List<Int>>, existingTiles: List<Tile> = emptyList()): List<Tile> {
+        var maxId = existingTiles.maxOfOrNull { it.id } ?: 0L
+        val usedIds = mutableSetOf<Long>()
+        val result = mutableListOf<Tile>()
+        for (r in 0..3) {
+            for (c in 0..3) {
+                val v = grid[r][c]
+                if (v != 0) {
+                    val match = existingTiles.find { it.row == r && it.col == c && it.value == v && !usedIds.contains(it.id) }
+                    if (match != null) {
+                        usedIds.add(match.id)
+                        result.add(match.copy(isMerged = false, isNew = false))
+                    } else {
+                        maxId++
+                        usedIds.add(maxId)
+                        result.add(Tile(id = maxId, value = v, row = r, col = c, isNew = false, isMerged = false))
+                    }
+                }
+            }
+        }
+        return result
     }
 
     private fun syncAudioSettings() {
@@ -162,14 +188,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
-    // Move logic for 2048
+    // Move logic for 2048 with smooth tile animation support
     fun move(direction: Direction) {
         val current = _gameState.value
         if (current.isGameOver) return
         if (_showPauseModal.value) return
 
         val currentGrid = current.grid
-        val (newGrid, scoreGained, moved) = processMove(currentGrid, direction)
+        val currentTiles = if (current.tiles.isEmpty()) syncTilesFromGrid(currentGrid) else current.tiles
+
+        val (newGrid, newTiles, scoreGained, moved) = processMoveWithTiles(currentGrid, currentTiles, direction)
 
         if (!moved) return // No change
 
@@ -185,10 +213,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         newUndoStack.add(0, GridSnapshot(currentGrid, current.score))
         if (newUndoStack.size > 3) newUndoStack.removeAt(newUndoStack.lastIndex)
 
-        // Spawn new tile
-        val mutableNewGrid = newGrid.map { it.toMutableList() }.toMutableList()
-        spawnRandomTileInGrid(mutableNewGrid)
-
         val newScore = current.score + scoreGained
         val newHighScore = maxOf(current.highScore, newScore)
         val newMovesCount = current.movesCount + 1
@@ -199,7 +223,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         for (r in 0..3) {
             for (c in 0..3) {
-                val v = mutableNewGrid[r][c]
+                val v = newGrid[r][c]
                 if (v > maxTile) maxTile = v
                 if (v > 0) newlyUnlockedCollection.add(v)
             }
@@ -213,7 +237,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             soundManager.playVictory()
         }
 
-        val gameOverNow = checkGameOver(mutableNewGrid)
+        val gameOverNow = checkGameOver(newGrid)
         if (gameOverNow && !current.isGameOver) {
             soundManager.playGameOver()
         }
@@ -223,7 +247,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         checkLevelProgression(newScore, maxTile, unlockedLevs)
 
         var newState = current.copy(
-            grid = mutableNewGrid,
+            grid = newGrid,
+            tiles = newTiles,
             score = newScore,
             highScore = newHighScore,
             movesCount = newMovesCount,
@@ -246,110 +271,182 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun processMove(
-        grid: List<List<Int>>,
+    private data class MoveResult(
+        val grid: List<List<Int>>,
+        val tiles: List<Tile>,
+        val scoreGained: Int,
+        val hasMoved: Boolean
+    )
+
+    private fun processMoveWithTiles(
+        currentGrid: List<List<Int>>,
+        currentTiles: List<Tile>,
         direction: Direction
-    ): Triple<List<List<Int>>, Int, Boolean> {
-        val resultGrid = List(4) { MutableList(4) { 0 } }
+    ): MoveResult {
+        val cleanCurrentTiles = syncTilesFromGrid(currentGrid, currentTiles)
+        var maxId = cleanCurrentTiles.maxOfOrNull { it.id } ?: 0L
+        fun nextId(): Long = ++maxId
+
+        val tileMap = mutableMapOf<Pair<Int, Int>, Tile>()
+        for (t in cleanCurrentTiles) {
+            tileMap[Pair(t.row, t.col)] = t
+        }
+
+        val newTiles = mutableListOf<Tile>()
         var totalScoreGained = 0
         var hasMoved = false
 
         when (direction) {
             Direction.LEFT -> {
                 for (r in 0..3) {
-                    val row = grid[r].filter { it != 0 }
-                    val mergedRow = mutableListOf<Int>()
+                    val line = (0..3).mapNotNull { c -> tileMap[Pair(r, c)] }
+                    var targetCol = 0
                     var i = 0
-                    while (i < row.size) {
-                        if (i + 1 < row.size && row[i] == row[i + 1]) {
-                            val mergedValue = row[i] * 2
-                            mergedRow.add(mergedValue)
-                            totalScoreGained += mergedValue
+                    while (i < line.size) {
+                        if (i + 1 < line.size && line[i].value == line[i + 1].value) {
+                            val t1 = line[i]
+                            val mergedVal = t1.value * 2
+                            totalScoreGained += mergedVal
+
+                            newTiles.add(t1.copy(row = r, col = targetCol, value = mergedVal, isMerged = true, isNew = false))
+
+                            hasMoved = true
+                            targetCol++
                             i += 2
                         } else {
-                            mergedRow.add(row[i])
+                            val t = line[i]
+                            val updated = t.copy(row = r, col = targetCol, isMerged = false, isNew = false)
+                            newTiles.add(updated)
+                            if (t.row != r || t.col != targetCol) {
+                                hasMoved = true
+                            }
+                            targetCol++
                             i++
                         }
-                    }
-                    while (mergedRow.size < 4) mergedRow.add(0)
-                    for (c in 0..3) {
-                        resultGrid[r][c] = mergedRow[c]
-                        if (grid[r][c] != resultGrid[r][c]) hasMoved = true
                     }
                 }
             }
             Direction.RIGHT -> {
                 for (r in 0..3) {
-                    val row = grid[r].filter { it != 0 }
-                    val mergedRow = mutableListOf<Int>()
-                    var i = row.size - 1
-                    while (i >= 0) {
-                        if (i - 1 >= 0 && row[i] == row[i - 1]) {
-                            val mergedValue = row[i] * 2
-                            mergedRow.add(0, mergedValue)
-                            totalScoreGained += mergedValue
-                            i -= 2
+                    val line = (0..3).mapNotNull { c -> tileMap[Pair(r, c)] }.reversed()
+                    var targetCol = 3
+                    var i = 0
+                    while (i < line.size) {
+                        if (i + 1 < line.size && line[i].value == line[i + 1].value) {
+                            val t1 = line[i]
+                            val mergedVal = t1.value * 2
+                            totalScoreGained += mergedVal
+
+                            newTiles.add(t1.copy(row = r, col = targetCol, value = mergedVal, isMerged = true, isNew = false))
+
+                            hasMoved = true
+                            targetCol--
+                            i += 2
                         } else {
-                            mergedRow.add(0, row[i])
-                            i--
+                            val t = line[i]
+                            val updated = t.copy(row = r, col = targetCol, isMerged = false, isNew = false)
+                            newTiles.add(updated)
+                            if (t.row != r || t.col != targetCol) {
+                                hasMoved = true
+                            }
+                            targetCol--
+                            i++
                         }
-                    }
-                    while (mergedRow.size < 4) mergedRow.add(0, 0)
-                    for (c in 0..3) {
-                        resultGrid[r][c] = mergedRow[c]
-                        if (grid[r][c] != resultGrid[r][c]) hasMoved = true
                     }
                 }
             }
             Direction.UP -> {
                 for (c in 0..3) {
-                    val col = (0..3).map { grid[it][c] }.filter { it != 0 }
-                    val mergedCol = mutableListOf<Int>()
+                    val line = (0..3).mapNotNull { r -> tileMap[Pair(r, c)] }
+                    var targetRow = 0
                     var i = 0
-                    while (i < col.size) {
-                        if (i + 1 < col.size && col[i] == col[i + 1]) {
-                            val mergedValue = col[i] * 2
-                            mergedCol.add(mergedValue)
-                            totalScoreGained += mergedValue
+                    while (i < line.size) {
+                        if (i + 1 < line.size && line[i].value == line[i + 1].value) {
+                            val t1 = line[i]
+                            val mergedVal = t1.value * 2
+                            totalScoreGained += mergedVal
+
+                            newTiles.add(t1.copy(row = targetRow, col = c, value = mergedVal, isMerged = true, isNew = false))
+
+                            hasMoved = true
+                            targetRow++
                             i += 2
                         } else {
-                            mergedCol.add(col[i])
+                            val t = line[i]
+                            val updated = t.copy(row = targetRow, col = c, isMerged = false, isNew = false)
+                            newTiles.add(updated)
+                            if (t.row != targetRow || t.col != c) {
+                                hasMoved = true
+                            }
+                            targetRow++
                             i++
                         }
-                    }
-                    while (mergedCol.size < 4) mergedCol.add(0)
-                    for (r in 0..3) {
-                        resultGrid[r][c] = mergedCol[r]
-                        if (grid[r][c] != resultGrid[r][c]) hasMoved = true
                     }
                 }
             }
             Direction.DOWN -> {
                 for (c in 0..3) {
-                    val col = (0..3).map { grid[it][c] }.filter { it != 0 }
-                    val mergedCol = mutableListOf<Int>()
-                    var i = col.size - 1
-                    while (i >= 0) {
-                        if (i - 1 >= 0 && col[i] == col[i - 1]) {
-                            val mergedValue = col[i] * 2
-                            mergedCol.add(0, mergedValue)
-                            totalScoreGained += mergedValue
-                            i -= 2
+                    val line = (0..3).mapNotNull { r -> tileMap[Pair(r, c)] }.reversed()
+                    var targetRow = 3
+                    var i = 0
+                    while (i < line.size) {
+                        if (i + 1 < line.size && line[i].value == line[i + 1].value) {
+                            val t1 = line[i]
+                            val mergedVal = t1.value * 2
+                            totalScoreGained += mergedVal
+
+                            newTiles.add(t1.copy(row = targetRow, col = c, value = mergedVal, isMerged = true, isNew = false))
+
+                            hasMoved = true
+                            targetRow--
+                            i += 2
                         } else {
-                            mergedCol.add(0, col[i])
-                            i--
+                            val t = line[i]
+                            val updated = t.copy(row = targetRow, col = c, isMerged = false, isNew = false)
+                            newTiles.add(updated)
+                            if (t.row != targetRow || t.col != c) {
+                                hasMoved = true
+                            }
+                            targetRow--
+                            i++
                         }
-                    }
-                    while (mergedCol.size < 4) mergedCol.add(0, 0)
-                    for (r in 0..3) {
-                        resultGrid[r][c] = mergedCol[r]
-                        if (grid[r][c] != resultGrid[r][c]) hasMoved = true
                     }
                 }
             }
         }
 
-        return Triple(resultGrid, totalScoreGained, hasMoved)
+        if (!hasMoved) {
+            return MoveResult(currentGrid, cleanCurrentTiles, 0, false)
+        }
+
+        val resultGrid = List(4) { MutableList(4) { 0 } }
+        for (t in newTiles) {
+            resultGrid[t.row][t.col] = t.value
+        }
+
+        val emptyCells = mutableListOf<Pair<Int, Int>>()
+        for (r in 0..3) {
+            for (c in 0..3) {
+                if (resultGrid[r][c] == 0) emptyCells.add(Pair(r, c))
+            }
+        }
+
+        if (emptyCells.isNotEmpty()) {
+            val (spawnR, spawnC) = emptyCells[Random.nextInt(emptyCells.size)]
+            val spawnVal = if (Random.nextFloat() < 0.9f) 2 else 4
+            resultGrid[spawnR][spawnC] = spawnVal
+            val spawnedTile = Tile(
+                id = nextId(),
+                value = spawnVal,
+                row = spawnR,
+                col = spawnC,
+                isNew = true,
+                isMerged = false
+            )
+            newTiles.add(spawnedTile)
+        }
+
+        return MoveResult(resultGrid, newTiles, totalScoreGained, true)
     }
 
     private fun checkGameOver(grid: List<List<Int>>): Boolean {
@@ -382,9 +479,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         soundManager.playUndo()
         val previous = current.undoStack.first()
         val remainingStack = current.undoStack.drop(1)
+        val restoredTiles = syncTilesFromGrid(previous.grid)
 
         val newState = current.copy(
             grid = previous.grid,
+            tiles = restoredTiles,
             score = previous.score,
             isGameOver = false,
             undoCount = current.undoCount + 1,
@@ -418,9 +517,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         val current = _gameState.value
         val newGrid = createNewGameGrid()
+        val newTiles = syncTilesFromGrid(newGrid)
 
         val newState = current.copy(
             grid = newGrid,
+            tiles = newTiles,
             score = 0,
             isGameOver = false,
             isWon = false,
@@ -514,8 +615,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         repository.resetAllData()
 
         val newGrid = createNewGameGrid()
+        val newTiles = syncTilesFromGrid(newGrid)
         _gameState.value = GameState(
             grid = newGrid,
+            tiles = newTiles,
             score = 0,
             highScore = 0,
             unlockedLevels = setOf(1),

@@ -216,6 +216,7 @@ data class GridSnapshot(
 
 data class GameState(
     val grid: List<List<Int>> = List(4) { List(4) { 0 } },
+    val tiles: List<Tile> = emptyList(),
     val score: Int = 0,
     val highScore: Int = 0,
     val currentLevel: Int = 1,

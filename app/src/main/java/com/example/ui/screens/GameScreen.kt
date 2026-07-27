@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -234,9 +235,13 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             // 4x4 Grid Board
+            val isAnimationsEnabled by viewModel.isAnimationsEnabled.collectAsState()
+
             BoardView(
                 grid = gameState.grid,
+                tiles = gameState.tiles,
                 isDarkTheme = isDarkTheme,
+                isAnimationsEnabled = isAnimationsEnabled,
                 onMove = { direction -> viewModel.move(direction) }
             )
 

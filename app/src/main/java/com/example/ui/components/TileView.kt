@@ -1,7 +1,8 @@
 package com.example.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +37,9 @@ import com.example.ui.theme.EmptyCellLight
 fun TileView(
     value: Int,
     isDarkTheme: Boolean = true,
+    isMerged: Boolean = false,
+    isNew: Boolean = false,
+    isAnimationsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     if (value == 0) {
@@ -48,16 +53,44 @@ fun TileView(
     }
 
     val item = TileRegistry.getItem(value)
-    val scale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = 450f),
-        label = "tileScale"
-    )
+    val scaleAnim = remember { Animatable(if (isNew && isAnimationsEnabled) 0f else 1f) }
+
+    LaunchedEffect(key1 = value, key2 = isMerged, key3 = isNew) {
+        if (!isAnimationsEnabled) {
+            scaleAnim.snapTo(1f)
+            return@LaunchedEffect
+        }
+        if (isMerged) {
+            // Merge pop / bounce: 0.85 -> 1.14 -> 1.0
+            scaleAnim.snapTo(0.85f)
+            scaleAnim.animateTo(
+                targetValue = 1.14f,
+                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+            )
+            scaleAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 90, easing = FastOutSlowInEasing)
+            )
+        } else if (isNew) {
+            // Spawn animation: 0 -> 1.08 -> 1.0
+            scaleAnim.snapTo(0f)
+            scaleAnim.animateTo(
+                targetValue = 1.08f,
+                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing)
+            )
+            scaleAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 60, easing = FastOutSlowInEasing)
+            )
+        } else {
+            scaleAnim.snapTo(1f)
+        }
+    }
 
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .scale(scale)
+            .scale(scaleAnim.value)
             .shadow(elevation = 3.dp, shape = RoundedCornerShape(14.dp))
             .clip(RoundedCornerShape(14.dp))
             .background(item.backgroundColor)

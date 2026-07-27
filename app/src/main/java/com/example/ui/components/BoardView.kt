@@ -1,17 +1,24 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +53,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.Tile
 import com.example.ui.theme.BoardBackgroundDark
 import com.example.ui.theme.BoardBackgroundLight
 import com.example.ui.theme.TricolorBlue
@@ -56,7 +65,9 @@ import kotlin.math.abs
 @Composable
 fun BoardView(
     grid: List<List<Int>>,
+    tiles: List<Tile> = emptyList(),
     isDarkTheme: Boolean = true,
+    isAnimationsEnabled: Boolean = true,
     onMove: (Direction) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,11 +77,28 @@ fun BoardView(
     val boardBg = if (isDarkTheme) BoardBackgroundDark else BoardBackgroundLight
     val boardBorder = if (isDarkTheme) Color(0xFF334155) else Color(0xFFCBD5E1)
 
+    val displayTiles = remember(grid, tiles) {
+        if (tiles.isNotEmpty()) tiles else {
+            val list = mutableListOf<Tile>()
+            var id = 0L
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    val v = grid[r][c]
+                    if (v != 0) {
+                        id++
+                        list.add(Tile(id = id, value = v, row = r, col = c))
+                    }
+                }
+            }
+            list
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth()
     ) {
-        // 4x4 Grid Board
+        // 4x4 Grid Board Container
         Surface(
             shadowElevation = 4.dp,
             shape = RoundedCornerShape(24.dp),
@@ -112,22 +140,70 @@ fun BoardView(
                 .padding(10.dp)
                 .testTag("board_grid")
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(2.dp)
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp)
             ) {
-                for (r in 0..3) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        for (c in 0..3) {
+                val spacing = 8.dp
+                val cellSize = (maxWidth - spacing * 3) / 4
+
+                // 1. Static empty cells background grid
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(spacing),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    for (r in 0..3) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(cellSize)
+                        ) {
+                            for (c in 0..3) {
+                                TileView(
+                                    value = 0,
+                                    isDarkTheme = isDarkTheme,
+                                    modifier = Modifier.size(cellSize)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 2. Dynamic animated tiles
+                for (tile in displayTiles) {
+                    key(tile.id) {
+                        val targetX = (cellSize + spacing) * tile.col
+                        val targetY = (cellSize + spacing) * tile.row
+
+                        val animX by animateDpAsState(
+                            targetValue = targetX,
+                            animationSpec = if (isAnimationsEnabled) {
+                                tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                            } else snap(),
+                            label = "tileX_${tile.id}"
+                        )
+                        val animY by animateDpAsState(
+                            targetValue = targetY,
+                            animationSpec = if (isAnimationsEnabled) {
+                                tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                            } else snap(),
+                            label = "tileY_${tile.id}"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .offset(x = animX, y = animY)
+                                .size(cellSize)
+                        ) {
                             TileView(
-                                value = grid[r][c],
+                                value = tile.value,
                                 isDarkTheme = isDarkTheme,
-                                modifier = Modifier.weight(1f)
+                                isMerged = tile.isMerged,
+                                isNew = tile.isNew,
+                                isAnimationsEnabled = isAnimationsEnabled,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     }
