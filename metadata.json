@@ -1,0 +1,6 @@
+{
+  "name": "România 2048",
+  "description": "Construiește România, piesă cu piesă! Jocul clasic 2048 într-o atmosferă românească autentică și modernă.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
