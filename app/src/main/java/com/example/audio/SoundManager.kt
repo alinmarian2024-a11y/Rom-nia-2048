@@ -1,30 +1,15 @@
 package com.example.audio
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioTrack
-import android.media.ToneGenerator
-import android.media.AudioManager
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlin.math.sin
 
 class SoundManager(private val context: Context) {
-
-    private var toneGen: ToneGenerator? = try {
-        ToneGenerator(AudioManager.STREAM_MUSIC, 70)
-    } catch (e: Exception) {
-        null
-    }
 
     private var vibrator: Vibrator? = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -42,8 +27,56 @@ class SoundManager(private val context: Context) {
     var isMusicEnabled: Boolean = true
     var isVibrationEnabled: Boolean = true
 
-    private var musicJob: Job? = null
+    private var mediaPlayer: MediaPlayer? = null
+    private var currentTrackResId: Int = 0
+    private var isPlayingGameplayTrack: Boolean = false
+
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    /**
+     * Dynamically finds raw audio resource IDs by resource name.
+     * This avoids compile-time dependencies on specific files and ensures
+     * no old/deleted audio resources are referenced in code.
+     */
+    private fun getRawResId(resName: String): Int {
+        return try {
+            context.resources.getIdentifier(resName, "raw", context.packageName)
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    /**
+     * Returns the raw resource ID for the main menu background music.
+     */
+    private fun getMenuMusicResId(): Int {
+        val candidates = listOf("menu_theme", "menu_music", "menu", "bg_menu", "theme_menu")
+        for (name in candidates) {
+            val resId = getRawResId(name)
+            if (resId != 0) return resId
+        }
+        return 0
+    }
+
+    /**
+     * Returns list of raw resource IDs for gameplay background music tracks.
+     */
+    private fun getGameplayMusicResIds(): List<Int> {
+        val tracks = mutableListOf<Int>()
+        val names = listOf(
+            "game_theme_1", "game_theme_2", "game_theme_3",
+            "gameplay_music", "game_music", "bg_game", "gameplay_1", "gameplay_2"
+        )
+        for (name in names) {
+            val resId = getRawResId(name)
+            if (resId != 0 && !tracks.contains(resId)) {
+                tracks.add(resId)
+            }
+        }
+        return tracks
+    }
+
+    private var currentGameplayIndex = 0
 
     fun triggerVibration(durationMs: Long = 25) {
         if (!isVibrationEnabled) return
@@ -59,161 +92,164 @@ class SoundManager(private val context: Context) {
         }
     }
 
+    // --- SFX METHODS ---
+
     fun playTap() {
         if (!isSfxEnabled) return
-        try {
-            toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 30)
-        } catch (e: Exception) {
-            playSynthesizedTone(frequency = 523, durationMs = 40)
-        }
+        triggerVibration(15)
     }
 
     fun playMove() {
         if (!isSfxEnabled) return
-        playSynthesizedTone(frequency = 330, durationMs = 35)
+        // Tile moves are clean and soft (vibration feedback only, no synthetic beep sounds)
+        triggerVibration(12)
     }
 
     fun playMerge(value: Int = 4) {
         if (!isSfxEnabled) return
-        triggerVibration(30)
-        val freq = when (value) {
-            4 -> 440
-            8 -> 523
-            16 -> 587
-            32 -> 659
-            64 -> 698
-            128 -> 784
-            256 -> 880
-            512 -> 987
-            1024 -> 1046
-            2048 -> 1175
-            else -> 1318
-        }
-        playSynthesizedTone(frequency = freq, durationMs = 80)
+        triggerVibration(25)
     }
 
     fun playBigMerge() {
         if (!isSfxEnabled) return
-        triggerVibration(60)
-        scope.launch {
-            playSynthesizedTone(frequency = 523, durationMs = 60)
-            delay(50)
-            playSynthesizedTone(frequency = 659, durationMs = 60)
-            delay(50)
-            playSynthesizedTone(frequency = 784, durationMs = 120)
-        }
+        triggerVibration(50)
     }
 
     fun playVictory() {
         if (!isSfxEnabled) return
         triggerVibration(100)
-        scope.launch {
-            val notes = intArrayOf(523, 659, 784, 1046)
-            for (note in notes) {
-                playSynthesizedTone(frequency = note, durationMs = 100)
-                delay(90)
-            }
-        }
     }
 
     fun playGameOver() {
         if (!isSfxEnabled) return
         triggerVibration(80)
-        scope.launch {
-            val notes = intArrayOf(400, 350, 300, 250)
-            for (note in notes) {
-                playSynthesizedTone(frequency = note, durationMs = 120)
-                delay(110)
-            }
-        }
     }
 
     fun playUndo() {
         if (!isSfxEnabled) return
-        playSynthesizedTone(frequency = 300, durationMs = 50)
+        triggerVibration(15)
     }
 
     fun playAchievement() {
         if (!isSfxEnabled) return
-        triggerVibration(70)
-        scope.launch {
-            playSynthesizedTone(frequency = 659, durationMs = 70)
-            delay(60)
-            playSynthesizedTone(frequency = 880, durationMs = 150)
-        }
+        triggerVibration(60)
     }
 
-    fun startMusic() {
-        if (musicJob?.isActive == true) return
-        musicJob = scope.launch {
-            val melody = intArrayOf(261, 293, 329, 349, 392, 349, 329, 293)
-            var index = 0
-            while (isActive) {
-                if (isMusicEnabled) {
-                    val note = melody[index % melody.size]
-                    playSynthesizedTone(frequency = note, durationMs = 180, volume = 0.12f)
-                    index++
+    // --- MUSIC METHODS ---
+
+    /**
+     * Starts background music based on state (Menu vs Gameplay).
+     * If no real audio file exists in res/raw/, music remains completely silent
+     * and NEVER generates procedural beep or synth sounds.
+     */
+    fun startMusic(isGameplay: Boolean = false) {
+        if (!isMusicEnabled) {
+            stopMusic()
+            return
+        }
+
+        val targetResId = if (isGameplay) {
+            val gameplayTracks = getGameplayMusicResIds()
+            if (gameplayTracks.isEmpty()) 0 else gameplayTracks[currentGameplayIndex % gameplayTracks.size]
+        } else {
+            getMenuMusicResId()
+        }
+
+        if (targetResId == 0) {
+            // No real audio file present in project: stop and remain silent
+            stopMusic()
+            return
+        }
+
+        if (mediaPlayer != null && currentTrackResId == targetResId && isPlayingGameplayTrack == isGameplay) {
+            try {
+                if (mediaPlayer?.isPlaying == false) {
+                    mediaPlayer?.start()
                 }
-                delay(450)
+            } catch (e: Exception) {
+                playTrack(targetResId, isGameplay)
             }
+            return
+        }
+
+        playTrack(targetResId, isGameplay)
+    }
+
+    private fun playTrack(resId: Int, isGameplay: Boolean) {
+        stopMusic()
+        if (resId == 0) return
+
+        try {
+            currentTrackResId = resId
+            isPlayingGameplayTrack = isGameplay
+
+            mediaPlayer = MediaPlayer.create(context, resId)?.apply {
+                // Uniform volume level (35% volume across menu and gameplay)
+                setVolume(0.35f, 0.35f)
+
+                if (isGameplay) {
+                    val gameplayTracks = getGameplayMusicResIds()
+                    if (gameplayTracks.size > 1) {
+                        isLooping = false
+                        setOnCompletionListener {
+                            currentGameplayIndex = (currentGameplayIndex + 1) % gameplayTracks.size
+                            val nextTrackRes = gameplayTracks[currentGameplayIndex]
+                            playTrack(nextTrackRes, isGameplay = true)
+                        }
+                    } else {
+                        isLooping = true
+                    }
+                } else {
+                    isLooping = true
+                }
+
+                start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     fun stopMusic() {
-        musicJob?.cancel()
-        musicJob = null
-    }
-
-    private fun playSynthesizedTone(frequency: Int, durationMs: Int, volume: Float = 0.3f) {
         try {
-            val sampleRate = 22050
-            val numSamples = (sampleRate * (durationMs / 1000.0)).toInt().coerceAtLeast(100)
-            val sample = DoubleArray(numSamples)
-            val buffer = ShortArray(numSamples)
-
-            for (i in 0 until numSamples) {
-                val angle = 2.0 * Math.PI * i / (sampleRate.toDouble() / frequency)
-                // Soft sine wave with gentle fade out
-                val fade = 1.0 - (i.toDouble() / numSamples.toDouble())
-                sample[i] = sin(angle) * fade
-            }
-
-            for (i in sample.indices) {
-                buffer[i] = (sample[i] * 32767 * volume).toInt().toShort()
-            }
-
-            val audioTrack = AudioTrack.Builder()
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_GAME)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                .setAudioFormat(
-                    AudioFormat.Builder()
-                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(sampleRate)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                        .build()
-                )
-                .setBufferSizeInBytes(buffer.size * 2)
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build()
-
-            audioTrack.write(buffer, 0, buffer.size)
-            audioTrack.play()
-            scope.launch {
-                delay(durationMs.toLong() + 50)
-                audioTrack.release()
+            mediaPlayer?.let { player ->
+                if (player.isPlaying) {
+                    player.stop()
+                }
+                player.release()
             }
         } catch (e: Exception) {
-            // Ignore audio fallback errors
+            e.printStackTrace()
+        } finally {
+            mediaPlayer = null
+            currentTrackResId = 0
+        }
+    }
+
+    fun pauseMusic() {
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun resumeMusic() {
+        if (!isMusicEnabled) return
+        try {
+            if (mediaPlayer != null && mediaPlayer?.isPlaying == false) {
+                mediaPlayer?.start()
+            } else if (mediaPlayer == null) {
+                startMusic(isPlayingGameplayTrack)
+            }
+        } catch (e: Exception) {
+            startMusic(isPlayingGameplayTrack)
         }
     }
 
     fun release() {
         stopMusic()
-        toneGen?.release()
-        toneGen = null
     }
 }

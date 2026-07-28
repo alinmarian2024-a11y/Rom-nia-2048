@@ -45,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import com.example.model.GameState
 import com.example.ui.components.BoardView
 import com.example.ui.components.GameOverDialog
@@ -96,9 +98,10 @@ fun GameScreen(
                     )
                 }
 
+                val isAdventure = gameState.gameMode == com.example.model.GameMode.ADVENTURE
                 Text(
-                    text = "🇷🇴 ROMÂNIA 2048",
-                    fontSize = 18.sp,
+                    text = if (isAdventure) "🗺️ NIVEL ${gameState.currentLevel}" else "♾️ MOD INFINIT",
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -185,13 +188,19 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Undo & Restart Buttons
+            val context = LocalContext.current
+            val activity = context as? Activity
+            val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val freeUndosRemaining = maxOf(0, 3 - gameState.undoCount)
+                val isFreeUndoAvailable = freeUndosRemaining > 0 && gameState.undoStack.isNotEmpty()
+
                 OutlinedButton(
-                    onClick = { viewModel.undoMove() },
-                    enabled = gameState.undoStack.isNotEmpty(),
+                    onClick = { viewModel.handleUndoClick(activity) },
                     shape = RoundedCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant),
                     modifier = Modifier
@@ -203,7 +212,11 @@ fun GameScreen(
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "UNDO (${gameState.undoStack.size}/3)",
+                            text = if (isFreeUndoAvailable) {
+                                "UNDO ($freeUndosRemaining/3)"
+                            } else {
+                                if (isAdsRemoved) "UNDO (+1)" else "UNDO 🎬"
+                            },
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         )
@@ -248,6 +261,10 @@ fun GameScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Objective & Progress Banner
+            val isAdventureMode = gameState.gameMode == com.example.model.GameMode.ADVENTURE
+            val levelObj = com.example.model.GAME_LEVELS.find { it.levelNumber == gameState.currentLevel }
+            val targetItem = levelObj?.let { com.example.model.TileRegistry.getItem(it.targetTile) }
+
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -259,14 +276,23 @@ fun GameScreen(
                     modifier = Modifier.padding(14.dp)
                 ) {
                     Text(
-                        text = "🎯 OBIECTIV: Ajunge la piesa 2048!",
+                        text = if (isAdventureMode && targetItem != null) {
+                            "🎯 OBIECTIV NIVEL ${gameState.currentLevel}: Descoperă ${targetItem.emoji} ${targetItem.name} (${levelObj.targetTile})"
+                        } else {
+                            "🎯 OBIECTIV: Ajunge la piesa 2048!"
+                        },
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GoldAccent
+                        color = GoldAccent,
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "„Combină două piese identice pentru a construi România, piesă cu piesă!”",
+                        text = if (isAdventureMode && targetItem != null) {
+                            "„Combină două piese identice pentru a descoperi ${targetItem.name}!”"
+                        } else {
+                            "„Combină două piese identice pentru a construi România, piesă cu piesă!”"
+                        },
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

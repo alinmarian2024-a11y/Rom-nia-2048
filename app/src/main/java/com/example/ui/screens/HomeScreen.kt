@@ -146,7 +146,7 @@ fun HomeScreen(
 
         // Big Primary Button: ▶ JOACĂ
         Button(
-            onClick = { onNavigate(AppScreen.GAME) },
+            onClick = { onNavigate(AppScreen.MODE_SELECTION) },
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),

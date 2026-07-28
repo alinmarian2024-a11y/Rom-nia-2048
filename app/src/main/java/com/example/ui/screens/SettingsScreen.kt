@@ -35,6 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.ResetConfirmDialog
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
+import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.TricolorRed
 import com.example.viewmodel.AppScreen
 import com.example.viewmodel.GameViewModel
@@ -53,6 +56,12 @@ fun SettingsScreen(
     val isAnimations by viewModel.isAnimationsEnabled.collectAsState()
     val isConfirmRestart by viewModel.isConfirmRestart.collectAsState()
     val showResetConfirm by viewModel.showResetConfirmDialog.collectAsState()
+
+    val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
+    val price by viewModel.formattedPrice.collectAsState()
+    val billingMessage by viewModel.billingStatusMessage.collectAsState()
+    val context = LocalContext.current
+    val activity = context as? Activity
 
     val scrollState = rememberScrollState()
 
@@ -247,6 +256,96 @@ fun SettingsScreen(
                         checked = isConfirmRestart,
                         onCheckedChange = { viewModel.setConfirmRestartPref(it) },
                         modifier = Modifier.testTag("switch_confirm_restart")
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Monetization / Remove Ads Section
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "👑 RECLAME & PRO",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (isAdsRemoved) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = GoldAccent.copy(alpha = 0.2f)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Text(text = "👑", fontSize = 24.sp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "RECLAME ELIMINATE!",
+                                    fontWeight = FontWeight.Bold,
+                                    color = GoldAccent,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "Ai acces la versiunea completă fără reclame, Continue & Undo gratuit!",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "Elimină toate reclamele din joc printr-o achiziție unică permanentă. Primești de asemenea acces la Continue & Undo gratuit!",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { activity?.let { viewModel.purchaseRemoveAds(it) } },
+                        colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("btn_remove_ads")
+                    ) {
+                        Text(
+                            text = "🚫 ELIMINĂ RECLAMELE (${price ?: "6,99 lei"})",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = { viewModel.restorePurchases() },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("btn_restore_purchases")
+                    ) {
+                        Text("🔄 RESTAUREAZĂ ACHIZIȚIILE", fontSize = 12.sp)
+                    }
+                }
+
+                billingMessage?.let { msg ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = msg,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }

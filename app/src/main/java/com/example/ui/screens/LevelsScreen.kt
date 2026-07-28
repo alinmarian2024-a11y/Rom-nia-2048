@@ -102,7 +102,7 @@ fun LevelsScreen(
         ) {
             items(GAME_LEVELS) { level ->
                 val isUnlocked = gameState.unlockedLevels.contains(level.levelNumber)
-                val isCompleted = gameState.highestTileAchieved >= level.targetTile || gameState.highScore >= level.minScore
+                val isCompleted = gameState.completedLevels.contains(level.levelNumber) || gameState.highestTileAchieved >= level.targetTile
                 val targetItem = TileRegistry.getItem(level.targetTile)
 
                 Card(
@@ -156,7 +156,7 @@ fun LevelsScreen(
                             Spacer(modifier = Modifier.height(2.dp))
 
                             Text(
-                                text = "Obiectiv: Piesa ${level.targetTile} (${targetItem.name}) sau ${level.minScore} pct",
+                                text = "Obiectiv: Descoperă Piesa ${level.targetTile} (${targetItem.name})",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -172,48 +172,27 @@ fun LevelsScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Column(horizontalAlignment = Alignment.End) {
-                            when {
-                                isCompleted -> {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .background(GoldAccent.copy(alpha = 0.2f), CircleShape)
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            tint = GoldAccent,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "COMPLETAT",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = GoldAccent
-                                        )
-                                    }
-                                }
-                                isUnlocked -> {
-                                    Button(
-                                        onClick = {
-                                            onSelectLevel(level.levelNumber)
-                                            onNavigate(AppScreen.GAME)
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
-                                        shape = RoundedCornerShape(10.dp)
-                                    ) {
-                                        Text("JOACĂ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                                else -> {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = "Blocat",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            if (isUnlocked) {
+                                Button(
+                                    onClick = { onSelectLevel(level.levelNumber) },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isCompleted) GoldAccent else TricolorBlue
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = if (isCompleted) "REJOACĂ" else "JOACĂ",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isCompleted) Color.Black else Color.White
                                     )
                                 }
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Blocat",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }

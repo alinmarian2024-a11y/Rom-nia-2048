@@ -18,6 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.model.GameState
 import com.example.ui.components.AchievementToast
+import android.app.Activity
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import com.example.ui.components.ExtraUndoDialog
 import com.example.ui.components.GameOverDialog
 import com.example.ui.components.LevelCompleteDialog
 import com.example.ui.components.RestartConfirmDialog
@@ -28,19 +32,23 @@ import com.example.ui.screens.CollectionScreen
 import com.example.ui.screens.GameScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LevelsScreen
+import com.example.ui.screens.ModeSelectionScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.Romania2048Theme
 import com.example.viewmodel.AppScreen
 import com.example.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
+    private var gameViewModel: GameViewModel? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val gameViewModel: GameViewModel = viewModel()
-            val themePref by gameViewModel.themePreference.collectAsState()
-            val isRomanianTheme by gameViewModel.isRomanianTheme.collectAsState()
+            val vm: GameViewModel = viewModel()
+            gameViewModel = vm
+            val themePref by vm.themePreference.collectAsState()
+            val isRomanianTheme by vm.isRomanianTheme.collectAsState()
 
             val isDarkTheme = when (themePref) {
                 "DARK" -> true
@@ -54,13 +62,23 @@ class MainActivity : ComponentActivity() {
             ) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainAppContent(
-                        viewModel = gameViewModel,
+                        viewModel = vm,
                         isDarkTheme = isDarkTheme,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        gameViewModel?.onPauseApp()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        gameViewModel?.onResumeApp()
     }
 }
 
@@ -78,6 +96,11 @@ fun MainAppContent(
     val levelCompleteDialog by viewModel.showLevelCompleteDialog.collectAsState()
     val latestAchievement by viewModel.latestUnlockedAchievement.collectAsState()
 
+    val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
+    val showExtraUndoDialog by viewModel.showExtraUndoDialog.collectAsState()
+    val context = LocalContext.current
+    val activity = context as? Activity
+
     // Handle back button behavior
     BackHandler(enabled = currentScreen != AppScreen.HOME) {
         viewModel.navigateTo(AppScreen.HOME)
@@ -89,6 +112,11 @@ fun MainAppContent(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) }
             )
+            AppScreen.MODE_SELECTION -> ModeSelectionScreen(
+                gameState = gameState,
+                onNavigate = { viewModel.navigateTo(it) },
+                onSelectMode = { mode -> viewModel.selectGameMode(mode) }
+            )
             AppScreen.GAME -> GameScreen(
                 viewModel = viewModel,
                 gameState = gameState,
@@ -99,8 +127,7 @@ fun MainAppContent(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) },
                 onSelectLevel = { levelNum ->
-                    // Set current level
-                    viewModel.navigateTo(AppScreen.GAME)
+                    viewModel.startAdventureLevel(levelNum)
                 }
             )
             AppScreen.COLLECTION -> CollectionScreen(
@@ -148,8 +175,20 @@ fun MainAppContent(
             GameOverDialog(
                 score = gameState.score,
                 highScore = gameState.highScore,
+                onContinueGame = activity?.let { act -> { viewModel.handleGameOverContinue(act) } },
+                isAdsRemoved = isAdsRemoved,
                 onRestart = { viewModel.confirmRestart() },
                 onHome = { viewModel.navigateTo(AppScreen.HOME) }
+            )
+        }
+
+        if (showExtraUndoDialog) {
+            ExtraUndoDialog(
+                isAdsRemoved = isAdsRemoved,
+                onConfirm = {
+                    activity?.let { act -> viewModel.performExtraUndo(act) }
+                },
+                onDismiss = { viewModel.dismissExtraUndoDialog() }
             )
         }
 

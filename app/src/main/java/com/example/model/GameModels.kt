@@ -180,23 +180,33 @@ object TileRegistry {
     }
 }
 
+enum class GameMode {
+    INFINITE,
+    ADVENTURE
+}
+
 data class GameLevel(
     val levelNumber: Int,
     val title: String,
     val targetTile: Int,
-    val minScore: Int,
-    val rewardName: String,
-    val rewardBonus: Int
+    val minScore: Int = 0,
+    val rewardName: String = "",
+    val rewardBonus: Int = 0
 )
 
 val GAME_LEVELS = listOf(
-    GameLevel(1, "Nivelul 1: Covrigul Moldovenesc", 128, 500, "Insignă Covrig", 500),
-    GameLevel(2, "Nivelul 2: Festin la Mănăstire", 256, 1500, "Insignă Mămăliguță", 1000),
-    GameLevel(3, "Nivelul 3: Cetatea din Carpați", 512, 3500, "Insignă Cavaler", 2000),
-    GameLevel(4, "Nivelul 4: Capitala Modernă", 1024, 8000, "Insignă Ambasador", 5000),
-    GameLevel(5, "Nivelul 5: Marea Unire 2048", 2048, 15000, "Insignă Patriot", 10000),
-    GameLevel(6, "Nivelul 6: Poezia Luceafărului", 4096, 35000, "Insignă Geniu", 20000),
-    GameLevel(7, "Nivelul 7: Vulturul Regal", 8192, 75000, "Insignă Legendă", 50000)
+    GameLevel(1, "Nivelul 1: Mămăliga Aurie", 8, 100, "Insignă Mămăligă", 100),
+    GameLevel(2, "Nivelul 2: Brânza de Burduf", 16, 250, "Insignă Brânză", 250),
+    GameLevel(3, "Nivelul 3: Copane la Grătar", 32, 500, "Insignă Copane", 500),
+    GameLevel(4, "Nivelul 4: Sarmale Tradiționale", 64, 1000, "Insignă Sarmale", 1000),
+    GameLevel(5, "Nivelul 5: Ciorba Rădăuțeană", 128, 2000, "Insignă Ciorbă", 1500),
+    GameLevel(6, "Nivelul 6: Cafea la Ibric", 256, 4000, "Insignă Cafea", 2500),
+    GameLevel(7, "Nivelul 7: Castelul Peleș", 512, 8000, "Insignă Castel", 4000),
+    GameLevel(8, "Nivelul 8: Palatul Parlamentului", 1024, 15000, "Insignă Palat", 7000),
+    GameLevel(9, "Nivelul 9: Marea Unire 2048", 2048, 30000, "Insignă Patriot", 10000),
+    GameLevel(10, "Nivelul 10: Poezia Luceafărului", 4096, 60000, "Insignă Geniu", 20000),
+    GameLevel(11, "Nivelul 11: Vulturul Carpaților", 8192, 120000, "Insignă Legendă", 35000),
+    GameLevel(12, "Nivelul 12: Coroana Regală", 16384, 250000, "Insignă Supremă", 50000)
 )
 
 data class Achievement(
@@ -215,6 +225,7 @@ data class GridSnapshot(
 )
 
 data class GameState(
+    val gameMode: GameMode = GameMode.INFINITE,
     val grid: List<List<Int>> = List(4) { List(4) { 0 } },
     val tiles: List<Tile> = emptyList(),
     val score: Int = 0,
@@ -228,6 +239,7 @@ data class GameState(
     val keepPlayingPast2048: Boolean = false,
     val undoStack: List<GridSnapshot> = emptyList(),
     val unlockedLevels: Set<Int> = setOf(1),
+    val completedLevels: Set<Int> = emptySet(),
     val unlockedCollectionValues: Set<Int> = setOf(2),
     val unlockedAchievementIds: Set<Int> = emptySet()
 )

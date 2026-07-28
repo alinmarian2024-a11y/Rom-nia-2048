@@ -1,5 +1,6 @@
 package com.example.viewmodel
 
+import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,11 +9,14 @@ import com.example.data.GameRepository
 import com.example.model.Achievement
 import com.example.model.GAME_LEVELS
 import com.example.model.GameLevel
+import com.example.model.GameMode
 import com.example.model.GameState
 import com.example.model.GridSnapshot
 import com.example.model.RomaniaItem
 import com.example.model.Tile
 import com.example.model.TileRegistry
+import com.example.monetization.AdManager
+import com.example.monetization.BillingManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +25,7 @@ import kotlin.random.Random
 
 enum class AppScreen {
     HOME,
+    MODE_SELECTION,
     GAME,
     LEVELS,
     COLLECTION,
@@ -37,6 +42,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     val repository = GameRepository(application)
     val soundManager = SoundManager(application)
+    val adManager = AdManager(application)
+    val billingManager = BillingManager(application, repository.isAdsRemoved()) { removed ->
+        repository.setAdsRemoved(removed)
+    }
+
+    val isAdsRemoved: StateFlow<Boolean> = billingManager.isAdsRemoved
+    val formattedPrice: StateFlow<String?> = billingManager.formattedPrice
+    val billingStatusMessage: StateFlow<String?> = billingManager.billingStatusMessage
+    val isAdReady: StateFlow<Boolean> = adManager.isAdReady
+
+    private val _showExtraUndoDialog = MutableStateFlow(false)
+    val showExtraUndoDialog: StateFlow<Boolean> = _showExtraUndoDialog.asStateFlow()
 
     private val _currentScreen = MutableStateFlow(AppScreen.HOME)
     val currentScreen: StateFlow<AppScreen> = _currentScreen.asStateFlow()
@@ -107,9 +124,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun loadSavedState() {
-        val loadedState = repository.loadGameState()
+        val loadedState = repository.loadGameState(GameMode.INFINITE)
         if (isGridEmpty(loadedState.grid)) {
-            // New game start
             val initialGrid = createNewGameGrid()
             val initialTiles = syncTilesFromGrid(initialGrid)
             _gameState.value = loadedState.copy(grid = initialGrid, tiles = initialTiles)
@@ -118,6 +134,51 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val initialTiles = syncTilesFromGrid(loadedState.grid)
             _gameState.value = loadedState.copy(tiles = initialTiles)
         }
+    }
+
+    fun selectGameMode(mode: GameMode) {
+        soundManager.playTap()
+        val loadedState = repository.loadGameState(mode)
+        val activeGrid = if (isGridEmpty(loadedState.grid)) createNewGameGrid() else loadedState.grid
+        val activeTiles = syncTilesFromGrid(activeGrid)
+
+        _gameState.value = loadedState.copy(
+            gameMode = mode,
+            grid = activeGrid,
+            tiles = activeTiles
+        )
+        repository.saveGameState(_gameState.value)
+
+        if (mode == GameMode.INFINITE) {
+            _currentScreen.value = AppScreen.GAME
+            if (isMusicEnabled.value) soundManager.startMusic(isGameplay = true)
+        } else {
+            _currentScreen.value = AppScreen.LEVELS
+            if (isMusicEnabled.value) soundManager.startMusic(isGameplay = false)
+        }
+    }
+
+    fun startAdventureLevel(levelNum: Int) {
+        soundManager.playTap()
+        val current = _gameState.value
+        val newGrid = createNewGameGrid()
+        val newTiles = syncTilesFromGrid(newGrid)
+
+        val newState = current.copy(
+            gameMode = GameMode.ADVENTURE,
+            currentLevel = levelNum,
+            grid = newGrid,
+            tiles = newTiles,
+            score = 0,
+            isGameOver = false,
+            isWon = false,
+            undoStack = emptyList()
+        )
+
+        _gameState.value = newState
+        repository.saveGameState(newState)
+        _currentScreen.value = AppScreen.GAME
+        if (isMusicEnabled.value) soundManager.startMusic(isGameplay = true)
     }
 
     fun syncTilesFromGrid(grid: List<List<Int>>, existingTiles: List<Tile> = emptyList()): List<Tile> {
@@ -143,12 +204,24 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return result
     }
 
+    fun onPauseApp() {
+        soundManager.pauseMusic()
+    }
+
+    fun onResumeApp() {
+        if (isMusicEnabled.value) {
+            val isGameplay = _currentScreen.value == AppScreen.GAME
+            soundManager.startMusic(isGameplay)
+        }
+    }
+
     private fun syncAudioSettings() {
         soundManager.isMusicEnabled = isMusicEnabled.value
         soundManager.isSfxEnabled = isSfxEnabled.value
         soundManager.isVibrationEnabled = isVibrationEnabled.value
         if (isMusicEnabled.value) {
-            soundManager.startMusic()
+            val isGameplay = _currentScreen.value == AppScreen.GAME
+            soundManager.startMusic(isGameplay)
         } else {
             soundManager.stopMusic()
         }
@@ -157,6 +230,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun navigateTo(screen: AppScreen) {
         soundManager.playTap()
         _currentScreen.value = screen
+        if (isMusicEnabled.value) {
+            val isGameplay = screen == AppScreen.GAME
+            soundManager.startMusic(isGameplay)
+        }
     }
 
     private fun isGridEmpty(grid: List<List<Int>>): Boolean {
@@ -244,7 +321,26 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         // Update levels
         val unlockedLevs = current.unlockedLevels.toMutableSet()
-        checkLevelProgression(newScore, maxTile, unlockedLevs)
+        val completedLevs = current.completedLevels.toMutableSet()
+
+        if (current.gameMode == com.example.model.GameMode.ADVENTURE) {
+            val levelObj = GAME_LEVELS.find { it.levelNumber == current.currentLevel }
+            if (levelObj != null) {
+                if (maxTile >= levelObj.targetTile || newScore >= levelObj.minScore) {
+                    if (!completedLevs.contains(levelObj.levelNumber)) {
+                        completedLevs.add(levelObj.levelNumber)
+                        val nextLevelNum = levelObj.levelNumber + 1
+                        if (nextLevelNum <= GAME_LEVELS.size) {
+                            unlockedLevs.add(nextLevelNum)
+                        }
+                        _showLevelCompleteDialog.value = levelObj
+                        soundManager.playBigMerge()
+                    }
+                }
+            }
+        } else {
+            checkLevelProgression(newScore, maxTile, unlockedLevs, completedLevs)
+        }
 
         var newState = current.copy(
             grid = newGrid,
@@ -257,6 +353,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             isGameOver = gameOverNow,
             undoStack = newUndoStack,
             unlockedLevels = unlockedLevs,
+            completedLevels = completedLevs,
             unlockedCollectionValues = newlyUnlockedCollection
         )
 
@@ -460,11 +557,20 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
-    private fun checkLevelProgression(score: Int, maxTile: Int, unlockedLevels: MutableSet<Int>) {
+    private fun checkLevelProgression(
+        score: Int,
+        maxTile: Int,
+        unlockedLevels: MutableSet<Int>,
+        completedLevels: MutableSet<Int>
+    ) {
         for (level in GAME_LEVELS) {
-            if (!unlockedLevels.contains(level.levelNumber)) {
-                if (maxTile >= level.targetTile || score >= level.minScore) {
-                    unlockedLevels.add(level.levelNumber)
+            if (maxTile >= level.targetTile || score >= level.minScore) {
+                if (!completedLevels.contains(level.levelNumber)) {
+                    completedLevels.add(level.levelNumber)
+                    val nextLevelNum = level.levelNumber + 1
+                    if (nextLevelNum <= GAME_LEVELS.size) {
+                        unlockedLevels.add(nextLevelNum)
+                    }
                     _showLevelCompleteDialog.value = level
                     soundManager.playBigMerge()
                 }
@@ -493,6 +599,149 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val updatedWithAchievements = evaluateAchievements(newState)
         _gameState.value = updatedWithAchievements
         repository.saveGameState(updatedWithAchievements)
+    }
+
+    // Monetization & Extra Undo / Continue functions
+    fun handleUndoClick(activity: Activity?) {
+        val current = _gameState.value
+        // 3 free undos rule: if under 3 undos used and stack is not empty
+        if (current.undoCount < 3 && current.undoStack.isNotEmpty()) {
+            undoMove()
+        } else {
+            _showExtraUndoDialog.value = true
+        }
+    }
+
+    fun dismissExtraUndoDialog() {
+        _showExtraUndoDialog.value = false
+    }
+
+    fun performExtraUndo(activity: Activity) {
+        if (isAdsRemoved.value) {
+            _showExtraUndoDialog.value = false
+            grantExtraUndoInternal()
+        } else {
+            adManager.showRewardedAd(
+                activity = activity,
+                onRewarded = {
+                    _showExtraUndoDialog.value = false
+                    grantExtraUndoInternal()
+                },
+                onClosedOrFailed = {
+                    // Ad closed before completion or not ready - reward not granted
+                }
+            )
+        }
+    }
+
+    private fun grantExtraUndoInternal() {
+        val current = _gameState.value
+        soundManager.playUndo()
+
+        val previous = current.undoStack.firstOrNull()
+        val newState = if (previous != null) {
+            val remainingStack = current.undoStack.drop(1)
+            val restoredTiles = syncTilesFromGrid(previous.grid)
+            current.copy(
+                grid = previous.grid,
+                tiles = restoredTiles,
+                score = previous.score,
+                isGameOver = false,
+                undoCount = current.undoCount + 1,
+                undoStack = remainingStack
+            )
+        } else {
+            // Free up lowest tiles if stack is empty
+            val newGrid = current.grid.map { it.toMutableList() }
+            var cleared = 0
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    if ((newGrid[r][c] == 2 || newGrid[r][c] == 4) && cleared < 2) {
+                        newGrid[r][c] = 0
+                        cleared++
+                    }
+                }
+            }
+            val restoredTiles = syncTilesFromGrid(newGrid)
+            current.copy(
+                grid = newGrid,
+                tiles = restoredTiles,
+                isGameOver = false,
+                undoCount = current.undoCount + 1
+            )
+        }
+
+        val updated = evaluateAchievements(newState)
+        _gameState.value = updated
+        repository.saveGameState(updated)
+    }
+
+    fun handleGameOverContinue(activity: Activity) {
+        if (isAdsRemoved.value) {
+            continueGameAfterGameOver()
+        } else {
+            adManager.showRewardedAd(
+                activity = activity,
+                onRewarded = {
+                    continueGameAfterGameOver()
+                },
+                onClosedOrFailed = {
+                    // Ad closed before completion or failed - reward not granted
+                }
+            )
+        }
+    }
+
+    fun continueGameAfterGameOver() {
+        val current = _gameState.value
+        soundManager.playUndo()
+
+        val previous = current.undoStack.firstOrNull()
+        val newState = if (previous != null) {
+            val remainingStack = current.undoStack.drop(1)
+            val restoredTiles = syncTilesFromGrid(previous.grid)
+            current.copy(
+                grid = previous.grid,
+                tiles = restoredTiles,
+                score = previous.score,
+                isGameOver = false,
+                undoStack = remainingStack
+            )
+        } else {
+            // Clear space for 2 lowest tiles
+            val newGrid = current.grid.map { it.toMutableList() }
+            var cleared = 0
+            for (r in 0..3) {
+                for (c in 0..3) {
+                    if ((newGrid[r][c] == 2 || newGrid[r][c] == 4) && cleared < 2) {
+                        newGrid[r][c] = 0
+                        cleared++
+                    }
+                }
+            }
+            val restoredTiles = syncTilesFromGrid(newGrid)
+            current.copy(
+                grid = newGrid,
+                tiles = restoredTiles,
+                isGameOver = false
+            )
+        }
+
+        val updated = evaluateAchievements(newState)
+        _gameState.value = updated
+        repository.saveGameState(updated)
+    }
+
+    fun purchaseRemoveAds(activity: Activity) {
+        billingManager.launchBillingFlow(activity)
+    }
+
+    fun restorePurchases() {
+        billingManager.queryPurchases()
+    }
+
+    fun clearBillingMessage() {
+        billingManager.clearStatusMessage()
     }
 
     fun requestRestart() {
@@ -549,7 +798,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun dismissLevelCompleteDialog() {
         soundManager.playTap()
+        val currentLevelCompleted = _showLevelCompleteDialog.value
         _showLevelCompleteDialog.value = null
+        if (currentLevelCompleted != null && _gameState.value.gameMode == com.example.model.GameMode.ADVENTURE) {
+            val nextLevelNum = currentLevelCompleted.levelNumber + 1
+            if (nextLevelNum <= GAME_LEVELS.size) {
+                startAdventureLevel(nextLevelNum)
+            } else {
+                navigateTo(AppScreen.LEVELS)
+            }
+        }
     }
 
     fun dismissAchievementToast() {
