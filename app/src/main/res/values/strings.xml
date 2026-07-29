@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">România 2048</string>
+    <string name="empty"></string>
 </resources>
