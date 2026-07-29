@@ -1,0 +1,4 @@
+sed -i '/val isMusicEnabled/a \    val musicVolume = MutableStateFlow(repository.getMusicVolume())\n    val sfxVolume = MutableStateFlow(repository.getSfxVolume())' app/src/main/java/com/example/viewmodel/GameViewModel.kt
+sed -i '/fun setMusic(enabled: Boolean)/a \    fun setMusicVolume(vol: Float) {\n        musicVolume.value = vol\n        repository.setMusicVolume(vol)\n        soundManager.musicVolume = vol\n        soundManager.updateMusicVolume()\n    }' app/src/main/java/com/example/viewmodel/GameViewModel.kt
+sed -i '/fun setSfx(enabled: Boolean)/a \    fun setSfxVolume(vol: Float) {\n        sfxVolume.value = vol\n        repository.setSfxVolume(vol)\n        soundManager.sfxVolume = vol\n    }' app/src/main/java/com/example/viewmodel/GameViewModel.kt
+sed -i '/soundManager.isMusicEnabled/a \        soundManager.musicVolume = musicVolume.value\n        soundManager.sfxVolume = sfxVolume.value' app/src/main/java/com/example/viewmodel/GameViewModel.kt

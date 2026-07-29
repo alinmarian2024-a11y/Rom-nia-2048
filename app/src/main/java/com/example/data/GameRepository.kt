@@ -44,6 +44,8 @@ class GameRepository(context: Context) {
 
         // Settings
         private const val KEY_PREF_MUSIC = "pref_music"
+        private const val KEY_PREF_MUSIC_VOL = "pref_music_vol"
+        private const val KEY_PREF_SFX_VOL = "pref_sfx_vol"
         private const val KEY_PREF_SFX = "pref_sfx"
         private const val KEY_PREF_VIBRATION = "pref_vibration"
         private const val KEY_PREF_THEME = "pref_theme"
@@ -190,9 +192,13 @@ class GameRepository(context: Context) {
     // Settings
     fun isMusicEnabled(): Boolean = prefs.getBoolean(KEY_PREF_MUSIC, true)
     fun setMusicEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_PREF_MUSIC, enabled).apply()
+    fun getMusicVolume(): Float = prefs.getFloat(KEY_PREF_MUSIC_VOL, 1.0f)
+    fun setMusicVolume(vol: Float) = prefs.edit().putFloat(KEY_PREF_MUSIC_VOL, vol).apply()
 
     fun isSfxEnabled(): Boolean = prefs.getBoolean(KEY_PREF_SFX, true)
     fun setSfxEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_PREF_SFX, enabled).apply()
+    fun getSfxVolume(): Float = prefs.getFloat(KEY_PREF_SFX_VOL, 1.0f)
+    fun setSfxVolume(vol: Float) = prefs.edit().putFloat(KEY_PREF_SFX_VOL, vol).apply()
 
     fun isVibrationEnabled(): Boolean = prefs.getBoolean(KEY_PREF_VIBRATION, true)
     fun setVibrationEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_PREF_VIBRATION, enabled).apply()

@@ -1,0 +1,2 @@
+sed -i 's/fun setMusicVolume(vol: Float) {/fun setMusicVolume(vol: Float) {\n        isMusicEnabled.value = true\n        repository.setMusicEnabled(true)\n        soundManager.isMusicEnabled = true/g' app/src/main/java/com/example/viewmodel/GameViewModel.kt
+sed -i 's/fun setSfxVolume(vol: Float) {/fun setSfxVolume(vol: Float) {\n        isSfxEnabled.value = true\n        repository.setSfxEnabled(true)\n        soundManager.isSfxEnabled = true/g' app/src/main/java/com/example/viewmodel/GameViewModel.kt

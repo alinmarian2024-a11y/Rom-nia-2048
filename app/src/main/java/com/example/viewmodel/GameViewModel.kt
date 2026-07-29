@@ -82,6 +82,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // Settings States
     val isMusicEnabled = MutableStateFlow(repository.isMusicEnabled())
+    val musicVolume = MutableStateFlow(repository.getMusicVolume())
+    val sfxVolume = MutableStateFlow(repository.getSfxVolume())
     val isSfxEnabled = MutableStateFlow(repository.isSfxEnabled())
     val isVibrationEnabled = MutableStateFlow(repository.isVibrationEnabled())
     val themePreference = MutableStateFlow(repository.getThemePreference())
@@ -217,6 +219,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun syncAudioSettings() {
         soundManager.isMusicEnabled = isMusicEnabled.value
+        soundManager.musicVolume = musicVolume.value
+        soundManager.sfxVolume = sfxVolume.value
         soundManager.isSfxEnabled = isSfxEnabled.value
         soundManager.isVibrationEnabled = isVibrationEnabled.value
         if (isMusicEnabled.value) {
@@ -603,6 +607,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     // Monetization & Extra Undo / Continue functions
     fun handleUndoClick(activity: Activity?) {
+        if (_showPauseModal.value) return
         val current = _gameState.value
         // 3 free undos rule: if under 3 undos used and stack is not empty
         if (current.undoCount < 3 && current.undoStack.isNotEmpty()) {
@@ -784,7 +789,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun togglePause() {
         soundManager.playTap()
-        _showPauseModal.value = !_showPauseModal.value
+        val willPause = !_showPauseModal.value
+        _showPauseModal.value = willPause
+        soundManager.setMusicPausedState(willPause)
+    }
+    
+    fun resumeFromPause() {
+        soundManager.playTap()
+        _showPauseModal.value = false
+        soundManager.setMusicPausedState(false)
     }
 
     fun continuePlayingPast2048() {
@@ -815,16 +828,23 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Settings actions
-    fun setMusic(enabled: Boolean) {
-        isMusicEnabled.value = enabled
-        repository.setMusicEnabled(enabled)
-        syncAudioSettings()
+    fun setMusicVolume(vol: Float) {
+        isMusicEnabled.value = true
+        repository.setMusicEnabled(true)
+        soundManager.isMusicEnabled = true
+        musicVolume.value = vol
+        repository.setMusicVolume(vol)
+        soundManager.musicVolume = vol
+        soundManager.updateMusicVolume()
     }
 
-    fun setSfx(enabled: Boolean) {
-        isSfxEnabled.value = enabled
-        repository.setSfxEnabled(enabled)
-        syncAudioSettings()
+    fun setSfxVolume(vol: Float) {
+        isSfxEnabled.value = true
+        repository.setSfxEnabled(true)
+        soundManager.isSfxEnabled = true
+        sfxVolume.value = vol
+        repository.setSfxVolume(vol)
+        soundManager.sfxVolume = vol
     }
 
     fun setVibration(enabled: Boolean) {

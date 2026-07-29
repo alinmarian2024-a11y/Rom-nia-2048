@@ -1,5 +1,8 @@
 package com.example
 
+import android.content.Context
+import android.os.Build
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -19,7 +22,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.model.GameState
 import com.example.ui.components.AchievementToast
 import android.app.Activity
-import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import com.example.ui.components.ExtraUndoDialog
 import com.example.ui.components.GameOverDialog
@@ -39,6 +41,9 @@ import com.example.viewmodel.AppScreen
 import com.example.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
+
+
+
     private var gameViewModel: GameViewModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,7 +115,10 @@ fun MainAppContent(
         when (currentScreen) {
             AppScreen.HOME -> HomeScreen(
                 gameState = gameState,
-                onNavigate = { viewModel.navigateTo(it) }
+                onNavigate = { viewModel.navigateTo(it) },
+                isAdsRemoved = isAdsRemoved,
+                onPurchaseRemoveAds = { activity?.let { act -> viewModel.purchaseRemoveAds(act) } },
+                onRestorePurchases = { viewModel.restorePurchases() }
             )
             AppScreen.MODE_SELECTION -> ModeSelectionScreen(
                 gameState = gameState,

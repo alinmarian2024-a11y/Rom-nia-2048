@@ -1,0 +1,3 @@
+sed -i '/private const val KEY_PREF_MUSIC = "pref_music"/a \        private const val KEY_PREF_MUSIC_VOL = "pref_music_vol"\n        private const val KEY_PREF_SFX_VOL = "pref_sfx_vol"' app/src/main/java/com/example/data/GameRepository.kt
+sed -i '/fun setMusicEnabled/a \    fun getMusicVolume(): Float = prefs.getFloat(KEY_PREF_MUSIC_VOL, 1.0f)\n    fun setMusicVolume(vol: Float) = prefs.edit().putFloat(KEY_PREF_MUSIC_VOL, vol).apply()' app/src/main/java/com/example/data/GameRepository.kt
+sed -i '/fun setSfxEnabled/a \    fun getSfxVolume(): Float = prefs.getFloat(KEY_PREF_SFX_VOL, 1.0f)\n    fun setSfxVolume(vol: Float) = prefs.edit().putFloat(KEY_PREF_SFX_VOL, vol).apply()' app/src/main/java/com/example/data/GameRepository.kt

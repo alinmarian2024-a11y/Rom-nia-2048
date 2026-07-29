@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > app/src/main/java/com/example/audio/SoundManager.kt
 package com.example.audio
 
 import android.content.Context
@@ -17,7 +18,11 @@ import kotlinx.coroutines.launch
 class SoundManager(private val baseContext: Context) {
 
     private val context: Context = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        baseContext.createAttributionContext("default")
+        try {
+            baseContext.createAttributionContext("default")
+        } catch (e: Exception) {
+            baseContext
+        }
     } else {
         baseContext
     }
@@ -40,7 +45,6 @@ class SoundManager(private val baseContext: Context) {
     
     var musicVolume: Float = 1.0f
     var sfxVolume: Float = 1.0f
-    var isPausedScale: Float = 1.0f
 
     private var mediaPlayer: MediaPlayer? = null
     private var currentTrackResId: Int = 0
@@ -48,13 +52,8 @@ class SoundManager(private val baseContext: Context) {
     private val scope = CoroutineScope(Dispatchers.Default)
 
     fun updateMusicVolume() {
-        val vol = musicVolume * 0.35f * isPausedScale
+        val vol = musicVolume * 0.35f
         mediaPlayer?.setVolume(vol, vol)
-    }
-
-    fun setMusicPausedState(isPaused: Boolean) {
-        isPausedScale = if (isPaused) 0.2f else 1.0f
-        updateMusicVolume()
     }
 
     private fun getRawResId(resName: String): Int {
@@ -273,7 +272,7 @@ class SoundManager(private val baseContext: Context) {
             isPlayingGameplayTrack = isGameplay
 
             mediaPlayer = MediaPlayer.create(context, resId)?.apply {
-                val vol = musicVolume * 0.35f * isPausedScale
+                val vol = musicVolume * 0.35f
                 setVolume(vol, vol)
                 if (isGameplay) {
                     val gameplayTracks = getGameplayMusicResIds()
@@ -341,3 +340,4 @@ class SoundManager(private val baseContext: Context) {
         stopMusic()
     }
 }
+INNER_EOF
