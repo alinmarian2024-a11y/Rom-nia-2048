@@ -11,3 +11,18 @@ workflows:
 
     artifacts:
       - app/build/outputs/apk/debug/*.apk
+
+  android-release:
+    name: Android Release AAB
+
+    environment:
+      java: 17
+      android_signing:
+        - romania2048_upload
+
+    scripts:
+      - chmod +x ./gradlew
+      - ./gradlew bundleRelease
+
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
