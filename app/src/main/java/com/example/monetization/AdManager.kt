@@ -16,6 +16,7 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.example.BuildConfig
 
 class AdManager(private val context: Context) {
 
@@ -23,8 +24,23 @@ class AdManager(private val context: Context) {
         private const val TAG = "AdManager"
 
         // Official Google test IDs. Replace both with your own AdMob ad-unit IDs before publishing.
-        const val TEST_REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
-        const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
+        private const val TEST_REWARDED_AD_UNIT_ID =
+    "ca-app-pub-3940256099942544/5224354917"
+
+private const val TEST_INTERSTITIAL_AD_UNIT_ID =
+    "ca-app-pub-3940256099942544/1033173712"
+
+private const val REAL_REWARDED_AD_UNIT_ID =
+    "ca-app-pub-4075616059615853/5792789249"
+
+private const val REAL_INTERSTITIAL_AD_UNIT_ID =
+    "ca-app-pub-4075616059615853/2475526615"
+
+private val REWARDED_AD_UNIT_ID =
+    if (BuildConfig.DEBUG) TEST_REWARDED_AD_UNIT_ID else REAL_REWARDED_AD_UNIT_ID
+
+private val INTERSTITIAL_AD_UNIT_ID =
+    if (BuildConfig.DEBUG) TEST_INTERSTITIAL_AD_UNIT_ID else REAL_INTERSTITIAL_AD_UNIT_ID
 
         private const val MIN_INTERSTITIAL_INTERVAL_MS = 12 * 60 * 1000L
     }
@@ -69,7 +85,7 @@ class AdManager(private val context: Context) {
 
         RewardedAd.load(
             context,
-            TEST_REWARDED_AD_UNIT_ID,
+            REWARDED_AD_UNIT_ID,
             AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
@@ -150,7 +166,7 @@ class AdManager(private val context: Context) {
 
         InterstitialAd.load(
             context,
-            TEST_INTERSTITIAL_AD_UNIT_ID,
+            INTERSTITIAL_AD_UNIT_ID,
             AdRequest.Builder().build(),
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
