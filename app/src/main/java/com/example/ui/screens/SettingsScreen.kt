@@ -58,6 +58,7 @@ fun SettingsScreen(
     val isAnimations by viewModel.isAnimationsEnabled.collectAsState()
     val isConfirmRestart by viewModel.isConfirmRestart.collectAsState()
     val showResetConfirm by viewModel.showResetConfirmDialog.collectAsState()
+    val isPrivacyOptionsRequired by viewModel.isPrivacyOptionsRequired.collectAsState()
 
     val context = LocalContext.current
     val activity = context as? Activity
@@ -255,6 +256,26 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(14.dp))
+
+        if (isPrivacyOptionsRequired) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    activity?.let(viewModel::showPrivacyOptions)
+                },
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .testTag("btn_privacy_options")
+            ) {
+                Text(
+                    text = "🔐 OPȚIUNI DE CONFIDENȚIALITATE",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+        }
 
         // Reset Data Button
         Button(

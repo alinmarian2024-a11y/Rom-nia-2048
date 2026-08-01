@@ -1,13 +1,12 @@
 package com.example
 
-import android.content.Context
-import android.os.Build
-
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,11 +17,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.model.GameState
-import com.example.ui.components.AchievementToast
-import android.app.Activity
 import androidx.compose.ui.platform.LocalContext
+import com.example.ui.components.AchievementToast
 import com.example.ui.components.ExtraUndoDialog
 import com.example.ui.components.GameOverDialog
 import com.example.ui.components.LevelCompleteDialog
@@ -42,18 +38,15 @@ import com.example.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
 
-
-
-    private var gameViewModel: GameViewModel? = null
+    private val gameViewModel: GameViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
-            val vm: GameViewModel = viewModel()
-            gameViewModel = vm
-            val themePref by vm.themePreference.collectAsState()
-            val isRomanianTheme by vm.isRomanianTheme.collectAsState()
+            val themePref by gameViewModel.themePreference.collectAsState()
+            val isRomanianTheme by gameViewModel.isRomanianTheme.collectAsState()
 
             val isDarkTheme = when (themePref) {
                 "DARK" -> true
@@ -67,23 +60,26 @@ class MainActivity : ComponentActivity() {
             ) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainAppContent(
-                        viewModel = vm,
+                        viewModel = gameViewModel,
                         isDarkTheme = isDarkTheme,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
+
+        // UMP is checked on every app launch. Ad requests start only after consent allows them.
+        gameViewModel.requestConsent(this)
     }
 
     override fun onPause() {
         super.onPause()
-        gameViewModel?.onPauseApp()
+        gameViewModel.onPauseApp()
     }
 
     override fun onResume() {
         super.onResume()
-        gameViewModel?.onResumeApp()
+        gameViewModel.onResumeApp()
     }
 }
 
@@ -102,13 +98,27 @@ fun MainAppContent(
     val latestAchievement by viewModel.latestUnlockedAchievement.collectAsState()
 
     val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
+    val formattedPrice by viewModel.formattedPrice.collectAsState()
+    val billingStatusMessage by viewModel.billingStatusMessage.collectAsState()
     val showExtraUndoDialog by viewModel.showExtraUndoDialog.collectAsState()
+
     val context = LocalContext.current
     val activity = context as? Activity
 
-    // Handle back button behavior
+    val runSafeAdOpportunity: (() -> Unit) -> Unit = { action ->
+        if (activity != null) {
+            viewModel.runInterstitialThen(activity, action)
+        } else {
+            action()
+        }
+    }
+
     BackHandler(enabled = currentScreen != AppScreen.HOME) {
-        viewModel.navigateTo(AppScreen.HOME)
+        if (currentScreen == AppScreen.GAME) {
+            runSafeAdOpportunity { viewModel.navigateTo(AppScreen.HOME) }
+        } else {
+            viewModel.navigateTo(AppScreen.HOME)
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -117,65 +127,87 @@ fun MainAppContent(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) },
                 isAdsRemoved = isAdsRemoved,
-                onPurchaseRemoveAds = { activity?.let { act -> viewModel.purchaseRemoveAds(act) } },
-                onRestorePurchases = { viewModel.restorePurchases() }
+                formattedPrice = formattedPrice,
+                billingStatusMessage = billingStatusMessage,
+                onPurchaseRemoveAds = {
+                    activity?.let(viewModel::purchaseRemoveAds)
+                },
+                onRestorePurchases = viewModel::restorePurchases,
+                onClearBillingMessage = viewModel::clearBillingMessage
             )
+
             AppScreen.MODE_SELECTION -> ModeSelectionScreen(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) },
-                onSelectMode = { mode -> viewModel.selectGameMode(mode) }
+                onSelectMode = viewModel::selectGameMode
             )
+
             AppScreen.GAME -> GameScreen(
                 viewModel = viewModel,
                 gameState = gameState,
                 isDarkTheme = isDarkTheme,
-                onNavigate = { viewModel.navigateTo(it) }
+                onNavigate = { target ->
+                    if (target != AppScreen.GAME) {
+                        runSafeAdOpportunity { viewModel.navigateTo(target) }
+                    } else {
+                        viewModel.navigateTo(target)
+                    }
+                }
             )
+
             AppScreen.LEVELS -> LevelsScreen(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) },
-                onSelectLevel = { levelNum ->
-                    viewModel.startAdventureLevel(levelNum)
-                }
+                onSelectLevel = viewModel::startAdventureLevel
             )
+
             AppScreen.COLLECTION -> CollectionScreen(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) }
             )
+
             AppScreen.ACHIEVEMENTS -> AchievementsScreen(
                 viewModel = viewModel,
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) }
             )
+
             AppScreen.SETTINGS -> SettingsScreen(
                 viewModel = viewModel,
                 onNavigate = { viewModel.navigateTo(it) }
             )
+
             AppScreen.ABOUT -> AboutScreen(
                 onNavigate = { viewModel.navigateTo(it) }
             )
         }
 
-        // Achievement Toast Overlay
         AchievementToast(
             achievement = latestAchievement,
-            onDismiss = { viewModel.dismissAchievementToast() },
+            onDismiss = viewModel::dismissAchievementToast,
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
-        // Global Dialog Overlays
         if (showRestartDialog) {
             RestartConfirmDialog(
-                onConfirm = { viewModel.confirmRestart() },
-                onDismiss = { viewModel.cancelRestartDialog() }
+                onConfirm = {
+                    runSafeAdOpportunity(viewModel::confirmRestart)
+                },
+                onDismiss = viewModel::cancelRestartDialog
             )
         }
 
         if (showVictoryDialog) {
             VictoryDialog(
-                onContinue = { viewModel.continuePlayingPast2048() },
-                onRestart = { viewModel.confirmRestart() },
-                onHome = { viewModel.navigateTo(AppScreen.HOME) }
+                onContinue = {
+                    runSafeAdOpportunity(viewModel::continuePlayingPast2048)
+                },
+                onRestart = {
+                    runSafeAdOpportunity(viewModel::confirmRestart)
+                },
+                onHome = {
+                    runSafeAdOpportunity { viewModel.navigateTo(AppScreen.HOME) }
+                }
             )
         }
 
@@ -183,27 +215,33 @@ fun MainAppContent(
             GameOverDialog(
                 score = gameState.score,
                 highScore = gameState.highScore,
-                onContinueGame = activity?.let { act -> { viewModel.handleGameOverContinue(act) } },
-                isAdsRemoved = isAdsRemoved,
-                onRestart = { viewModel.confirmRestart() },
-                onHome = { viewModel.navigateTo(AppScreen.HOME) }
+                onContinueGame = activity?.let { act ->
+                    { viewModel.handleGameOverContinue(act) }
+                },
+                onRestart = {
+                    runSafeAdOpportunity(viewModel::confirmRestart)
+                },
+                onHome = {
+                    runSafeAdOpportunity { viewModel.navigateTo(AppScreen.HOME) }
+                }
             )
         }
 
         if (showExtraUndoDialog) {
             ExtraUndoDialog(
-                isAdsRemoved = isAdsRemoved,
                 onConfirm = {
-                    activity?.let { act -> viewModel.performExtraUndo(act) }
+                    activity?.let(viewModel::performExtraUndo)
                 },
-                onDismiss = { viewModel.dismissExtraUndoDialog() }
+                onDismiss = viewModel::dismissExtraUndoDialog
             )
         }
 
         levelCompleteDialog?.let { level ->
             LevelCompleteDialog(
                 level = level,
-                onDismiss = { viewModel.dismissLevelCompleteDialog() }
+                onDismiss = {
+                    runSafeAdOpportunity(viewModel::dismissLevelCompleteDialog)
+                }
             )
         }
     }

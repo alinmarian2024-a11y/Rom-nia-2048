@@ -1,0 +1,68 @@
+ROMÂNIA 2048 — MODIFICĂRI MONETIZARE
+=====================================
+
+CE ESTE IMPLEMENTAT
+-------------------
+1. Reclama recompensată pentru Undo suplimentar după cele 3 Undo-uri gratuite.
+2. Reclama recompensată pentru Continuare după Game Over.
+3. Achiziția unică Google Play cu ID-ul: remove_ads.
+4. Achiziția remove_ads elimină NUMAI reclamele interstițiale.
+   Reclamele recompensate pentru Undo și Continuare rămân voluntare.
+5. Prețul butonului este preluat automat din Google Play, în moneda utilizatorului.
+6. Restaurarea achiziției verifică produsele deținute în Google Play.
+7. Reclame interstițiale la minimum 12 minute, doar la tranziții sigure:
+   revenire din joc, restart, final de nivel, Game Over sau victorie.
+8. Consimțământ Google UMP pentru utilizatorii din UE și buton de
+   Opțiuni de confidențialitate în Setări, când Google îl cere.
+9. Google Play Billing actualizat la 9.1.0.
+10. Google Mobile Ads actualizat la 25.4.0.
+
+IMPORTANT — MOMENTAN SUNT ID-URI GOOGLE DE TEST
+-----------------------------------------------
+Nu publica versiunea finală până nu înlocuiești ID-urile de test.
+
+În AndroidManifest.xml se află ID-ul de aplicație AdMob de test:
+ca-app-pub-3940256099942544~3347511713
+
+În AdManager.kt se află:
+Rewarded test:     ca-app-pub-3940256099942544/5224354917
+Interstitial test: ca-app-pub-3940256099942544/1033173712
+
+Aceste ID-uri sunt corecte pentru testare și nu produc venituri.
+
+CE TREBUIE CONFIGURAT ÎNAINTE DE PUBLICARE
+------------------------------------------
+A. ADMOB
+1. Creează aplicația România 2048 în AdMob.
+2. Creează un ad unit Rewarded.
+3. Creează un ad unit Interstitial.
+4. Înlocuiește cele două ID-uri din:
+   app/src/main/java/com/example/monetization/AdManager.kt
+5. Înlocuiește App ID-ul din:
+   app/src/main/AndroidManifest.xml
+6. Configurează în AdMob > Privacy & messaging mesajul pentru GDPR/UE.
+
+B. GOOGLE PLAY CONSOLE
+1. Creează produsul unic, neconsumabil:
+   Product ID: remove_ads
+2. Pune prețul de bază dorit, de exemplu 6,99 lei.
+3. Activează produsul.
+4. Testează achiziția prin Internal testing și un cont License tester.
+
+ORDINEA DE TESTARE
+------------------
+1. Urcă fișierele în GitHub.
+2. Rulează un build debug în Codemagic.
+3. Instalează APK-ul și verifică:
+   - muzica și sunetele;
+   - după 3 Undo-uri apare reclama rewarded;
+   - Continuare după Game Over cere reclamă;
+   - interstitialul nu apare înainte de 12 minute;
+   - după 12 minute poate apărea numai la o tranziție sigură.
+4. Configurează AdMob și Google Play Console.
+5. Generează un AAB release semnat pentru publicare.
+
+NOTĂ
+----
+Achizițiile Google Play nu pot fi testate corect dintr-un APK instalat direct
+în afara Play Store. Folosește Internal testing în Google Play Console.

@@ -224,7 +224,6 @@ fun GameOverDialog(
     score: Int,
     highScore: Int,
     onContinueGame: (() -> Unit)? = null,
-    isAdsRemoved: Boolean = false,
     onRestart: () -> Unit,
     onHome: () -> Unit
 ) {
@@ -300,7 +299,7 @@ fun GameOverDialog(
                             .testTag("gameover_btn_continue")
                     ) {
                         Text(
-                            text = if (isAdsRemoved) "▶ CONTINUĂ JOCUL" else "🎬 CONTINUĂ (RECLAMĂ)",
+                            text = "🎬 CONTINUĂ (RECLAMĂ)",
                             color = Color.Black,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -332,7 +331,6 @@ fun GameOverDialog(
 
 @Composable
 fun ExtraUndoDialog(
-    isAdsRemoved: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -340,17 +338,14 @@ fun ExtraUndoDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (isAdsRemoved) "↩ Undo Suplimentar" else "🎬 Undo Suplimentar",
+                text = "🎬 Undo Suplimentar",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
         },
         text = {
             Text(
-                text = if (isAdsRemoved)
-                    "Ai utilizat cele 3 Undo-uri gratuite. Deoarece ai eliminat reclamele, poți primi un Undo suplimentar gratuit!"
-                else
-                    "Ai consumat cele 3 Undo-uri gratuite ale acestei partide. Vizionează o reclamă scurtă pentru a primi 1 Undo suplimentar!"
+                text = "Ai consumat cele 3 Undo-uri gratuite ale acestei partide. Vizionează o reclamă scurtă pentru a primi 1 Undo suplimentar!"
             )
         },
         confirmButton = {
@@ -360,7 +355,7 @@ fun ExtraUndoDialog(
                 modifier = Modifier.testTag("btn_confirm_extra_undo")
             ) {
                 Text(
-                    text = if (isAdsRemoved) "▶ PRIMEȘTE UNDO" else "🎬 VEZI RECLAMĂ (+1 UNDO)",
+                    text = "🎬 VEZI RECLAMĂ (+1 UNDO)",
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )

@@ -60,8 +60,11 @@ fun HomeScreen(
     gameState: GameState,
     onNavigate: (AppScreen) -> Unit,
     isAdsRemoved: Boolean = false,
+    formattedPrice: String? = null,
+    billingStatusMessage: String? = null,
     onPurchaseRemoveAds: () -> Unit = {},
     onRestorePurchases: () -> Unit = {},
+    onClearBillingMessage: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -411,7 +414,7 @@ fun HomeScreen(
                             .testTag("home_btn_remove_ads")
                     ) {
                         Text(
-                            text = "ELIMINĂ RECLAMELE — 6,99 lei",
+                            text = "ELIMINĂ RECLAMELE — ${formattedPrice ?: "SE ÎNCARCĂ..."}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -439,6 +442,26 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+
+                billingStatusMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = message,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
+                    androidx.compose.material3.TextButton(
+                        onClick = onClearBillingMessage
+                    ) {
+                        Text(
+                            text = "ÎNCHIDE",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

@@ -193,8 +193,6 @@ fun GameScreen(
             // Undo & Restart Buttons
             val context = LocalContext.current
             val activity = context as? Activity
-            val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
-
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -218,7 +216,7 @@ fun GameScreen(
                             text = if (isFreeUndoAvailable) {
                                 "UNDO ($freeUndosRemaining/3)"
                             } else {
-                                if (isAdsRemoved) "UNDO (+1)" else "UNDO 🎬"
+                                "UNDO 🎬"
                             },
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp

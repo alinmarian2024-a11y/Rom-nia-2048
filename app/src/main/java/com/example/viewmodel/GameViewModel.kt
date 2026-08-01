@@ -17,6 +17,7 @@ import com.example.model.Tile
 import com.example.model.TileRegistry
 import com.example.monetization.AdManager
 import com.example.monetization.BillingManager
+import com.example.monetization.ConsentManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +44,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val repository = GameRepository(application)
     val soundManager = SoundManager(application)
     val adManager = AdManager(application)
+    val consentManager = ConsentManager(application)
     val billingManager = BillingManager(application, repository.isAdsRemoved()) { removed ->
         repository.setAdsRemoved(removed)
     }
@@ -51,6 +53,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val formattedPrice: StateFlow<String?> = billingManager.formattedPrice
     val billingStatusMessage: StateFlow<String?> = billingManager.billingStatusMessage
     val isAdReady: StateFlow<Boolean> = adManager.isAdReady
+    val isPrivacyOptionsRequired: StateFlow<Boolean> = consentManager.isPrivacyOptionsRequired
 
     private val _showExtraUndoDialog = MutableStateFlow(false)
     val showExtraUndoDialog: StateFlow<Boolean> = _showExtraUndoDialog.asStateFlow()
@@ -215,6 +218,26 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val isGameplay = _currentScreen.value == AppScreen.GAME
             soundManager.startMusic(isGameplay)
         }
+    }
+
+    fun requestConsent(activity: Activity) {
+        consentManager.requestConsent(activity) {
+            adManager.initialize()
+        }
+    }
+
+    fun showPrivacyOptions(activity: Activity) {
+        consentManager.showPrivacyOptions(activity) {
+            adManager.initialize()
+        }
+    }
+
+    fun runInterstitialThen(activity: Activity, action: () -> Unit) {
+        adManager.showInterstitialIfEligible(
+            activity = activity,
+            adsRemoved = isAdsRemoved.value,
+            onFinished = action
+        )
     }
 
     private fun syncAudioSettings() {
@@ -622,21 +645,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun performExtraUndo(activity: Activity) {
-        if (isAdsRemoved.value) {
-            _showExtraUndoDialog.value = false
-            grantExtraUndoInternal()
-        } else {
-            adManager.showRewardedAd(
-                activity = activity,
-                onRewarded = {
-                    _showExtraUndoDialog.value = false
-                    grantExtraUndoInternal()
-                },
-                onClosedOrFailed = {
-                    // Ad closed before completion or not ready - reward not granted
-                }
-            )
-        }
+        // Rewarded ads remain optional even after the remove_ads purchase.
+        // The purchase removes only automatic interstitial ads.
+        adManager.showRewardedAd(
+            activity = activity,
+            onRewarded = {
+                _showExtraUndoDialog.value = false
+                grantExtraUndoInternal()
+            },
+            onClosedOrFailed = {
+                // Reward is granted only after the ad reports that it was earned.
+            }
+        )
     }
 
     private fun grantExtraUndoInternal() {
@@ -682,19 +702,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun handleGameOverContinue(activity: Activity) {
-        if (isAdsRemoved.value) {
-            continueGameAfterGameOver()
-        } else {
-            adManager.showRewardedAd(
-                activity = activity,
-                onRewarded = {
-                    continueGameAfterGameOver()
-                },
-                onClosedOrFailed = {
-                    // Ad closed before completion or failed - reward not granted
-                }
-            )
-        }
+        // Continue remains a voluntary rewarded-ad action for every player.
+        adManager.showRewardedAd(
+            activity = activity,
+            onRewarded = {
+                continueGameAfterGameOver()
+            },
+            onClosedOrFailed = {
+                // Continue is not granted when the ad is skipped or unavailable.
+            }
+        )
     }
 
     fun continueGameAfterGameOver() {
@@ -742,7 +759,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun restorePurchases() {
-        billingManager.queryPurchases()
+        billingManager.restorePurchases()
     }
 
     fun clearBillingMessage() {
@@ -960,5 +977,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         soundManager.release()
+        billingManager.release()
     }
 }
