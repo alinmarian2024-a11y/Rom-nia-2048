@@ -21,9 +21,10 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
+    }
 
-  create("release") {
+  signingConfigs {
+    create("release") {
     val keystorePath =
         System.getenv("CM_KEYSTORE_PATH")
             ?: System.getenv("KEYSTORE_PATH")
