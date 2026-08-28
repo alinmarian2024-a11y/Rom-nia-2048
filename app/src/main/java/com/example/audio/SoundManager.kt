@@ -290,6 +290,9 @@ class SoundManager(private val baseContext: Context) {
                 } else {
                     isLooping = true
                 }
+                setOnErrorListener { _, _, _ -> 
+                    true // Consume the error to prevent crash/log spam
+                }
                 start()
             }
         } catch (e: Exception) {

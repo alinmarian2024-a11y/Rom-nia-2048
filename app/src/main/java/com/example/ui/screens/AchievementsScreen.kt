@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -68,7 +70,7 @@ fun AchievementsScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -76,7 +78,7 @@ fun AchievementsScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "🏆 REALIZĂRI",
+                text = Localization.strings.achievementsTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -86,7 +88,7 @@ fun AchievementsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Deblochează toate cele ${allAchievements.size} de realizări (${gameState.unlockedAchievementIds.size}/${allAchievements.size}):",
+            text = Localization.strings.achievementsSubtitle(allAchievements.size) + "(${gameState.unlockedAchievementIds.size}/${allAchievements.size}):",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -153,7 +155,7 @@ fun AchievementsScreen(
                                 if (isUnlocked) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "Deblocat",
+                                        contentDescription = Localization.strings.contentDescUnlocked,
                                         tint = GoldAccent,
                                         modifier = Modifier.size(20.dp)
                                     )

@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,11 +62,9 @@ fun HomeScreen(
     gameState: GameState,
     onNavigate: (AppScreen) -> Unit,
     isAdsRemoved: Boolean = false,
-    formattedPrice: String? = null,
-    billingStatusMessage: String? = null,
     onPurchaseRemoveAds: () -> Unit = {},
     onRestorePurchases: () -> Unit = {},
-    onClearBillingMessage: () -> Unit = {},
+    onToggleLanguage: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -76,7 +76,21 @@ fun HomeScreen(
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 20.dp)
     ) {
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            androidx.compose.material3.TextButton(
+                onClick = { 
+                    onToggleLanguage() 
+                }
+            ) {
+                Text(Localization.strings.languageSelector, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
+
 
         // Hero Logo Card with Tricolor Indicator Dots
         Surface(
@@ -129,7 +143,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "ROMÂNIA 2048",
+                    text = Localization.strings.appTitle,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -140,7 +154,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Construiește România, piesă cu piesă!",
+                    text = Localization.strings.appSubtitle,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -168,13 +182,13 @@ fun HomeScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Joacă",
+                    contentDescription = Localization.strings.contentDescPlay,
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "JOACĂ ACUM",
+                    text = Localization.strings.playNow,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -204,7 +218,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("NIVELURI", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(Localization.strings.btnLevels, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
 
@@ -220,7 +234,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.EmojiEvents, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("REALIZĂRI", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(Localization.strings.btnAchievements, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
 
@@ -236,7 +250,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("COLECȚIE", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(Localization.strings.collectionTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
 
@@ -252,7 +266,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("SETĂRI", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(Localization.strings.btnSettings, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
 
@@ -268,7 +282,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("DESPRE JOC", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text(Localization.strings.btnAbout, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
         }
@@ -291,7 +305,7 @@ fun HomeScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "RECORD",
+                        text = Localization.strings.record,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -313,13 +327,13 @@ fun HomeScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "NIVEL ACTUAL",
+                        text = Localization.strings.currentLevelTitle,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Nivel ${gameState.currentLevel}",
+                        text = Localization.strings.levelPrefix + "${gameState.currentLevel}",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.primary
@@ -335,7 +349,7 @@ fun HomeScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "COLECȚIE",
+                        text = Localization.strings.collectionTitle,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -366,7 +380,7 @@ fun HomeScreen(
                     .padding(20.dp)
             ) {
                 Text(
-                    text = "Joacă fără reclame",
+                    text = Localization.strings.removeAdsTitle,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -381,13 +395,13 @@ fun HomeScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Achiziționat",
+                            contentDescription = Localization.strings.contentDescPurchased,
                             tint = Color(0xFF4CAF50),
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Reclamele interstițiale sunt dezactivate",
+                            text = Localization.strings.adsRemovedMsg,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF4CAF50),
@@ -396,7 +410,7 @@ fun HomeScreen(
                     }
                 } else {
                     Text(
-                        text = "Elimină reclamele interstițiale și bucură-te de o experiență de joc mai plăcută.",
+                        text = Localization.strings.removeAdsDesc,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Normal,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -414,7 +428,7 @@ fun HomeScreen(
                             .testTag("home_btn_remove_ads")
                     ) {
                         Text(
-                            text = "ELIMINĂ RECLAMELE — ${formattedPrice ?: "SE ÎNCARCĂ..."}",
+                            text = Localization.strings.removeAdsBtn,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -422,7 +436,7 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Achiziție unică. Reclamele recompensate pentru Undo și Continuă după Game Over rămân disponibile.",
+                        text = Localization.strings.removeAdsDisclaimer,
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -437,31 +451,11 @@ fun HomeScreen(
                     modifier = Modifier.testTag("home_btn_restore_purchases")
                 ) {
                     Text(
-                        text = "RESTAUREAZĂ ACHIZIȚIA",
+                        text = Localization.strings.restorePurchaseBtn,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                }
-
-                billingStatusMessage?.let { message ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = message,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 16.sp
-                    )
-                    androidx.compose.material3.TextButton(
-                        onClick = onClearBillingMessage
-                    ) {
-                        Text(
-                            text = "ÎNCHIDE",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
         }

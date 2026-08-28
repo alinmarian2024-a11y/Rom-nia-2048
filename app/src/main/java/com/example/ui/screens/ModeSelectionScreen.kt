@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -76,7 +78,7 @@ fun ModeSelectionScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -84,7 +86,7 @@ fun ModeSelectionScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "🎮 ALEGE MODUL DE JOC",
+                text = Localization.strings.modeSelectionTitle,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -94,7 +96,7 @@ fun ModeSelectionScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Selectează experiența de joc pe care o dorești:",
+            text = Localization.strings.modeSelectionDesc,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -139,13 +141,13 @@ fun ModeSelectionScreen(
 
                         Column {
                             Text(
-                                text = "MOD AVENTURĂ",
+                                text = Localization.strings.modeAdventureTitle,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Progres pe niveluri",
+                                text = Localization.strings.modeAdventureDesc,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = TricolorBlue
@@ -163,7 +165,7 @@ fun ModeSelectionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Descoperă preparatele românești, completează colecția și deblochează noi niveluri pas cu pas.",
+                    text = Localization.strings.modeAdventureLongDesc,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp
@@ -172,20 +174,22 @@ fun ModeSelectionScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Niveluri deblocate: ${gameState.unlockedLevels.size} / 12",
+                            text = Localization.strings.unlockedLevelsPrefix + "${gameState.unlockedLevels.size} / 12",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            textAlign = TextAlign.Center
                         )
                     }
 
@@ -194,7 +198,13 @@ fun ModeSelectionScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("VEZI NIVELURILE", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = Localization.strings.viewLevelsBtn, 
+                            fontSize = 12.sp, 
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
@@ -239,13 +249,13 @@ fun ModeSelectionScreen(
 
                         Column {
                             Text(
-                                text = "MOD INFINIT",
+                                text = Localization.strings.modeInfiniteTitle,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Clasic fără sfârșit",
+                                text = Localization.strings.modeInfiniteDesc,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = GoldAccent
@@ -263,7 +273,7 @@ fun ModeSelectionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Joacă fără limită, combină cât mai multe piese și încearcă să-ți depășești recordul personal.",
+                    text = Localization.strings.modeInfiniteLongDesc,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp
@@ -272,20 +282,22 @@ fun ModeSelectionScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = GoldAccent.copy(alpha = 0.15f)
+                        color = GoldAccent.copy(alpha = 0.15f),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Record: ${gameState.highScore} pct",
+                            text = Localization.strings.record + ": ${gameState.highScore}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            textAlign = TextAlign.Center
                         )
                     }
 
@@ -294,7 +306,14 @@ fun ModeSelectionScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("JOACĂ ACUM", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(
+                            text = Localization.strings.playNow, 
+                            fontSize = 12.sp, 
+                            fontWeight = FontWeight.Bold, 
+                            color = Color.Black,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }

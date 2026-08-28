@@ -8,7 +8,6 @@ import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
@@ -32,59 +31,44 @@ class BillingManager(
     private val _isAdsRemoved = MutableStateFlow(initialAdsRemoved)
     val isAdsRemoved: StateFlow<Boolean> = _isAdsRemoved.asStateFlow()
 
-    private val _formattedPrice = MutableStateFlow<String?>(null)
+    private val _formattedPrice = MutableStateFlow<String?>("6,99 lei")
     val formattedPrice: StateFlow<String?> = _formattedPrice.asStateFlow()
 
     private val _billingStatusMessage = MutableStateFlow<String?>(null)
     val billingStatusMessage: StateFlow<String?> = _billingStatusMessage.asStateFlow()
 
     private var productDetails: ProductDetails? = null
-    private var isConnecting = false
-    private var restoreRequestedWhileConnecting = false
 
     private val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(this)
-        .enablePendingPurchases(
-            PendingPurchasesParams.newBuilder()
-                .enableOneTimeProducts()
-                .build()
-        )
-        .enableAutoServiceReconnection()
+        .enablePendingPurchases()
         .build()
+
+
 
     init {
         startConnection()
     }
 
     fun startConnection() {
-        if (billingClient.isReady || isConnecting) return
-        isConnecting = true
-
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(billingResult: BillingResult) {
-                isConnecting = false
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     Log.d(TAG, "Billing setup finished successfully.")
                     queryProductDetails()
-                    val showRestoreResult = restoreRequestedWhileConnecting
-                    restoreRequestedWhileConnecting = false
-                    queryPurchases(showResultMessage = showRestoreResult)
+                    queryPurchases()
                 } else {
                     Log.w(TAG, "Billing setup failed: ${billingResult.debugMessage}")
-                    _billingStatusMessage.value = "Google Play Billing nu este disponibil momentan."
                 }
             }
 
             override fun onBillingServiceDisconnected() {
-                isConnecting = false
-                Log.w(TAG, "Billing service disconnected; automatic reconnection is enabled.")
+                Log.w(TAG, "Billing service disconnected.")
             }
         })
     }
 
     private fun queryProductDetails() {
-        if (!billingClient.isReady) return
-
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(PRODUCT_REMOVE_ADS)
@@ -96,174 +80,122 @@ class BillingManager(
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, queryResult ->
-            val detailsList = queryResult.productDetailsList
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK &&
-                detailsList.isNotEmpty()
-            ) {
-                val details = detailsList.first()
+        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && productDetailsList.isNotEmpty()) {
+                val details = productDetailsList[0]
                 productDetails = details
-                _formattedPrice.value = details.oneTimePurchaseOfferDetails?.formattedPrice
-                Log.d(TAG, "Product details fetched. Price: ${_formattedPrice.value}")
+                val price = details.oneTimePurchaseOfferDetails?.formattedPrice
+                if (price != null) {
+                    _formattedPrice.value = price
+                }
+                Log.d(TAG, "Product details fetched. Price: $price")
             } else {
-                productDetails = null
-                _formattedPrice.value = null
-                Log.w(
-                    TAG,
-                    "queryProductDetailsAsync failed: ${billingResult.debugMessage}; " +
-                        "unfetched=${queryResult.unfetchedProductList.size}"
-                )
+                Log.w(TAG, "queryProductDetailsAsync failed: ${billingResult.debugMessage}")
             }
         }
     }
 
-    fun restorePurchases() {
-        _billingStatusMessage.value = "Se verifică achizițiile..."
-        if (!billingClient.isReady) {
-            restoreRequestedWhileConnecting = true
-            startConnection()
-            return
-        }
-        queryPurchases(showResultMessage = true)
-    }
-
-    private fun queryPurchases(showResultMessage: Boolean) {
+    fun queryPurchases() {
         if (!billingClient.isReady) return
 
-        val params = QueryPurchasesParams.newBuilder()
+        val queryPurchasesParams = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.INAPP)
             .build()
 
-        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
+        billingClient.queryPurchasesAsync(queryPurchasesParams) { billingResult, purchases ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val ownedPurchase = purchases.firstOrNull { purchase ->
-                    purchase.products.contains(PRODUCT_REMOVE_ADS) &&
+                var foundAdsRemoved = false
+                for (purchase in purchases) {
+                    if (purchase.products.contains(PRODUCT_REMOVE_ADS) &&
                         purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                    ) {
+                        foundAdsRemoved = true
+                        handlePurchase(purchase)
+                    }
                 }
-
-                if (ownedPurchase != null) {
-                    handlePurchase(ownedPurchase)
-                    if (showResultMessage) {
-                        _billingStatusMessage.value = "Achiziția a fost restaurată."
-                    }
-                } else {
-                    updateAdsRemoved(false)
-                    if (showResultMessage) {
-                        _billingStatusMessage.value = "Nu a fost găsită o achiziție activă."
-                    }
+                if (foundAdsRemoved) {
+                    _isAdsRemoved.value = true
+                    onAdsRemovedStateChanged(true)
                 }
             } else {
                 Log.w(TAG, "queryPurchasesAsync failed: ${billingResult.debugMessage}")
-                if (showResultMessage) {
-                    _billingStatusMessage.value = "Nu am putut verifica achizițiile. Încearcă din nou."
-                }
             }
         }
     }
 
     fun launchBillingFlow(activity: Activity): Boolean {
-        _billingStatusMessage.value = null
-
         if (!billingClient.isReady) {
-            _billingStatusMessage.value = "Google Play Billing se conectează. Încearcă din nou în câteva secunde."
+            _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingNotConnected
             startConnection()
             return false
         }
 
         val details = productDetails
         if (details == null) {
-            _billingStatusMessage.value =
-                "Produsul remove_ads nu este încă activ în Google Play Console."
-            queryProductDetails()
+            _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingProductNotFound
             return false
         }
 
-        val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
-            .setProductDetails(details)
-            .build()
+        val productDetailsParamsList = listOf(
+            BillingFlowParams.ProductDetailsParams.newBuilder()
+                .setProductDetails(details)
+                .build()
+        )
 
         val billingFlowParams = BillingFlowParams.newBuilder()
-            .setProductDetailsParamsList(listOf(productDetailsParams))
+            .setProductDetailsParamsList(productDetailsParamsList)
             .build()
 
         val result = billingClient.launchBillingFlow(activity, billingFlowParams)
-        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            _billingStatusMessage.value = "Achiziția nu a putut fi pornită: ${result.debugMessage}"
-            return false
-        }
-        return true
+        return result.responseCode == BillingClient.BillingResponseCode.OK
     }
 
-    override fun onPurchasesUpdated(
-        billingResult: BillingResult,
-        purchases: MutableList<Purchase>?
-    ) {
+    override fun onPurchasesUpdated(billingResult: BillingResult, purchases: MutableList<Purchase>?) {
         when (billingResult.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
-                purchases.orEmpty().forEach(::handlePurchase)
+                if (purchases != null) {
+                    for (purchase in purchases) {
+                        handlePurchase(purchase)
+                    }
+                }
             }
-
             BillingClient.BillingResponseCode.USER_CANCELED -> {
                 Log.d(TAG, "User canceled the purchase.")
-                _billingStatusMessage.value = "Achiziția a fost anulată."
             }
-
             BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
-                restorePurchases()
+                _isAdsRemoved.value = true
+                onAdsRemovedStateChanged(true)
+                _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingAdsAlreadyRemoved
             }
-
             else -> {
                 Log.e(TAG, "Purchase error: ${billingResult.debugMessage}")
-                _billingStatusMessage.value = "Eroare la achiziție: ${billingResult.debugMessage}"
+                _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingError(billingResult.debugMessage)
             }
         }
     }
 
     private fun handlePurchase(purchase: Purchase) {
-        if (!purchase.products.contains(PRODUCT_REMOVE_ADS)) return
+        if (purchase.products.contains(PRODUCT_REMOVE_ADS) &&
+            purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+        ) {
+            _isAdsRemoved.value = true
+            onAdsRemovedStateChanged(true)
+            _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingSuccess
 
-        when (purchase.purchaseState) {
-            Purchase.PurchaseState.PURCHASED -> {
-                updateAdsRemoved(true)
-                _billingStatusMessage.value =
-                    "Mulțumim! Reclamele interstițiale au fost eliminate permanent."
-
-                if (!purchase.isAcknowledged) {
-                    val params = AcknowledgePurchaseParams.newBuilder()
-                        .setPurchaseToken(purchase.purchaseToken)
-                        .build()
-
-                    billingClient.acknowledgePurchase(params) { result ->
-                        if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                            Log.d(TAG, "Purchase acknowledged successfully.")
-                        } else {
-                            Log.w(TAG, "Purchase acknowledgement failed: ${result.debugMessage}")
-                        }
+            if (!purchase.isAcknowledged) {
+                val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken)
+                    .build()
+                billingClient.acknowledgePurchase(acknowledgePurchaseParams) { result ->
+                    if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                        Log.d(TAG, "Purchase acknowledged successfully.")
                     }
                 }
             }
-
-            Purchase.PurchaseState.PENDING -> {
-                _billingStatusMessage.value =
-                    "Plata este în așteptare. Reclamele vor fi eliminate după confirmarea plății."
-            }
-
-            else -> Unit
         }
-    }
-
-    private fun updateAdsRemoved(removed: Boolean) {
-        _isAdsRemoved.value = removed
-        onAdsRemovedStateChanged(removed)
     }
 
     fun clearStatusMessage() {
         _billingStatusMessage.value = null
-    }
-
-    fun release() {
-        if (billingClient.isReady) {
-            billingClient.endConnection()
-        }
     }
 }

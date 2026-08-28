@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +56,7 @@ fun AboutScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -62,7 +64,7 @@ fun AboutScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "ℹ DESPRE JOC",
+                text = Localization.strings.aboutTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -95,7 +97,7 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "ROMÂNIA 2048",
+                    text = Localization.strings.appTitle,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -105,7 +107,7 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "„ROMÂNIA 2048 este un joc casual inspirat de România, de lucrurile mici și mari care ne definesc și de plăcerea de a construi ceva pas cu pas.”",
+                    text = Localization.strings.aboutDescription,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
@@ -124,14 +126,14 @@ fun AboutScreen(
                         modifier = Modifier.padding(14.dp).fillMaxWidth()
                     ) {
                         Text(
-                            text = "Versiunea 1.0.0",
+                            text = Localization.strings.version,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "© România 2048",
+                            text = Localization.strings.copyright,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )

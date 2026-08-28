@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +69,7 @@ fun CollectionScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -75,7 +77,7 @@ fun CollectionScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "🎨 COLECȚIE",
+                text = Localization.strings.collectionHeaderTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -85,7 +87,7 @@ fun CollectionScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Toate piesele românești pe care le-ai creat în joc (${gameState.unlockedCollectionValues.size}/${allItemsList.size}):",
+            text = Localization.strings.collectionSubtitle + "(${gameState.unlockedCollectionValues.size}/${allItemsList.size}):",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -140,7 +142,7 @@ fun CollectionScreen(
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Lock,
-                                    contentDescription = "Blocat",
+                                    contentDescription = Localization.strings.contentDescLocked,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -155,7 +157,7 @@ fun CollectionScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = if (isUnlocked) "${item.emoji} ${item.name}" else "???",
+                                    text = if (isUnlocked) "${item.emoji} ${item.name}" else Localization.strings.unknownTile,
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
@@ -170,7 +172,7 @@ fun CollectionScreen(
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = if (isUnlocked) "DEBLOCAT" else "BLOCAT",
+                                        text = if (isUnlocked) Localization.strings.statusUnlocked else Localization.strings.statusLocked,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isUnlocked) TricolorBlue else Color.Gray
@@ -181,7 +183,7 @@ fun CollectionScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = if (isUnlocked) item.description else "Atinge piesa ${item.value} în joc pentru a debloca acest obiect tradițional!",
+                                text = if (isUnlocked) item.description else Localization.strings.collectionLockedDesc(item.value),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

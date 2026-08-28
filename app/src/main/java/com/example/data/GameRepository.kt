@@ -1,5 +1,7 @@
 package com.example.data
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.model.GameMode
@@ -12,6 +14,7 @@ class GameRepository(context: Context) {
 
     companion object {
         private const val KEY_GAME_MODE = "key_game_mode"
+        private const val KEY_LANGUAGE = "key_language"
 
         // Shared / Global
         private const val KEY_HIGH_SCORE = "key_high_score"
@@ -53,6 +56,17 @@ class GameRepository(context: Context) {
         private const val KEY_PREF_ANIMATIONS = "pref_animations"
         private const val KEY_PREF_CONFIRM_RESTART = "pref_confirm_restart"
         private const val KEY_IS_ADS_REMOVED = "key_is_ads_removed"
+    }
+
+        
+    fun saveLanguage(language: Language) {
+        prefs.edit().putString(KEY_LANGUAGE, language.code).commit()
+    }
+    
+    fun getLanguage(): Language {
+        val code = prefs.getString(KEY_LANGUAGE, null)
+        if (code == null) return Language.EN
+        return if (code == Language.EN.code) Language.EN else Language.RO
     }
 
     fun saveGameState(state: GameState) {

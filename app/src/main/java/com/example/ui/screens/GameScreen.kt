@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,7 +97,7 @@ fun GameScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "Meniu Rapid",
+                        contentDescription = Localization.strings.contentDescQuickMenu,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
                     )
@@ -103,7 +105,7 @@ fun GameScreen(
 
                 val isAdventure = gameState.gameMode == com.example.model.GameMode.ADVENTURE
                 Text(
-                    text = if (isAdventure) "🗺️ NIVEL ${gameState.currentLevel}" else "♾️ MOD INFINIT",
+                    text = if (isAdventure) "🗺️ " + Localization.strings.getLevelName(gameState.currentLevel) else Localization.strings.infiniteModeTop,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
@@ -115,7 +117,7 @@ fun GameScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Pause,
-                        contentDescription = "Pauză",
+                        contentDescription = Localization.strings.contentDescPause,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(28.dp)
                     )
@@ -144,7 +146,7 @@ fun GameScreen(
                             .padding(vertical = 12.dp)
                     ) {
                         Text(
-                            text = "SCOR",
+                            text = Localization.strings.score,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -173,7 +175,7 @@ fun GameScreen(
                             .padding(vertical = 12.dp)
                     ) {
                         Text(
-                            text = "RECORD",
+                            text = Localization.strings.recordUpper,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent
@@ -193,6 +195,8 @@ fun GameScreen(
             // Undo & Restart Buttons
             val context = LocalContext.current
             val activity = context as? Activity
+            val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -214,9 +218,9 @@ fun GameScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (isFreeUndoAvailable) {
-                                "UNDO ($freeUndosRemaining/3)"
+                                Localization.strings.undoFreeRemaining(freeUndosRemaining, 3)
                             } else {
-                                "UNDO 🎬"
+                                if (isAdsRemoved) Localization.strings.undoAdTooltipPurchased else Localization.strings.undoAdTooltipAd
                             },
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
@@ -237,7 +241,7 @@ fun GameScreen(
                         Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "RESTART",
+                            text = Localization.strings.restartBtn,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
                             fontSize = 13.sp
@@ -278,9 +282,9 @@ fun GameScreen(
                 ) {
                     Text(
                         text = if (isAdventureMode && targetItem != null) {
-                            "🎯 OBIECTIV NIVEL ${gameState.currentLevel}: Descoperă ${targetItem.emoji} ${targetItem.name} (${levelObj.targetTile})"
+                            Localization.strings.objectiveAdventure(gameState.currentLevel, targetItem.emoji, targetItem.name, levelObj.targetTile)
                         } else {
-                            "🎯 OBIECTIV: Ajunge la piesa 2048!"
+                            Localization.strings.objectiveInfinite
                         },
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
@@ -290,9 +294,9 @@ fun GameScreen(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isAdventureMode && targetItem != null) {
-                            "„Combină două piese identice pentru a descoperi ${targetItem.name}!”"
+                            Localization.strings.objectiveAdventureDesc(targetItem.name)
                         } else {
-                            "„Combină două piese identice pentru a construi România, piesă cu piesă!”"
+                            Localization.strings.objectiveInfiniteDesc
                         },
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
@@ -339,7 +343,7 @@ fun GameScreen(
                     modifier = Modifier.padding(32.dp)
                 ) {
                     Text(
-                        text = "JOC ÎN PAUZĂ",
+                        text = Localization.strings.gamePaused,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -355,7 +359,7 @@ fun GameScreen(
                             .height(64.dp)
                     ) {
                         Text(
-                            text = "CONTINUĂ JOCUL",
+                            text = Localization.strings.resumeGameBtn,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary

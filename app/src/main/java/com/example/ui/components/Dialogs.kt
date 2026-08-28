@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -44,13 +46,13 @@ fun RestartConfirmDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "🔄 Joc Nou",
+                text = Localization.strings.restartDialogTitle,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
         },
         text = {
-            Text(text = "Ești sigur că vrei să începi un joc nou? Progresul jocului curent va fi resetat.")
+            Text(text = Localization.strings.restartDialogDesc)
         },
         confirmButton = {
             Button(
@@ -58,7 +60,7 @@ fun RestartConfirmDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = TricolorRed),
                 modifier = Modifier.testTag("btn_confirm_restart")
             ) {
-                Text(text = "DA, RESTART", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(text = Localization.strings.restartDialogConfirm, color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -66,7 +68,7 @@ fun RestartConfirmDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_restart")
             ) {
-                Text(text = "ANULEAZĂ")
+                Text(text = Localization.strings.btnCancel)
             }
         },
         shape = RoundedCornerShape(18.dp)
@@ -95,7 +97,7 @@ fun PauseModal(
                 modifier = Modifier.padding(24.dp)
             ) {
                 Text(
-                    text = "⏸ JOC PUS PE PAUZĂ",
+                    text = Localization.strings.pauseDialogTitle,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -108,7 +110,7 @@ fun PauseModal(
                     onClick = onResume,
                     modifier = Modifier.fillMaxWidth().testTag("pause_btn_resume")
                 ) {
-                    Text("▶ CONTINUĂ", fontWeight = FontWeight.Bold)
+                    Text(Localization.strings.btnContinuePlaying, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -118,7 +120,7 @@ fun PauseModal(
                     colors = ButtonDefaults.buttonColors(containerColor = TricolorRed),
                     modifier = Modifier.fillMaxWidth().testTag("pause_btn_restart")
                 ) {
-                    Text("🔄 RESTART", fontWeight = FontWeight.Bold)
+                    Text("🔄 " + Localization.strings.restartBtn, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -127,7 +129,7 @@ fun PauseModal(
                     onClick = onSettings,
                     modifier = Modifier.fillMaxWidth().testTag("pause_btn_settings")
                 ) {
-                    Text("⚙ SETĂRI")
+                    Text("⚙ " + Localization.strings.btnSettings)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -136,7 +138,7 @@ fun PauseModal(
                     onClick = onHome,
                     modifier = Modifier.fillMaxWidth().testTag("pause_btn_home")
                 ) {
-                    Text("🏠 MENIU PRINCIPAL")
+                    Text(Localization.strings.btnHome)
                 }
             }
         }
@@ -169,7 +171,7 @@ fun VictoryDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "FELICITĂRI!",
+                    text = Localization.strings.victoryTitle,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = GoldAccent,
@@ -179,7 +181,7 @@ fun VictoryDialog(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "„Ai construit România, piesă cu piesă!”",
+                    text = Localization.strings.victoryDesc,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
@@ -193,7 +195,7 @@ fun VictoryDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
                     modifier = Modifier.fillMaxWidth().testTag("victory_btn_continue")
                 ) {
-                    Text("▶ CONTINUĂ JOCUL", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(Localization.strings.continueGameBtn, color = Color.White, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -203,7 +205,7 @@ fun VictoryDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = TricolorRed),
                     modifier = Modifier.fillMaxWidth().testTag("victory_btn_restart")
                 ) {
-                    Text("🔄 JOACĂ DIN NOU", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(Localization.strings.btnPlayAgain, color = Color.White, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -212,7 +214,7 @@ fun VictoryDialog(
                     onClick = onHome,
                     modifier = Modifier.fillMaxWidth().testTag("victory_btn_home")
                 ) {
-                    Text("🏠 MENIU PRINCIPAL")
+                    Text(Localization.strings.btnHome)
                 }
             }
         }
@@ -224,6 +226,7 @@ fun GameOverDialog(
     score: Int,
     highScore: Int,
     onContinueGame: (() -> Unit)? = null,
+    isAdsRemoved: Boolean = false,
     onRestart: () -> Unit,
     onHome: () -> Unit
 ) {
@@ -248,7 +251,7 @@ fun GameOverDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "GAME OVER",
+                    text = Localization.strings.gameOverTitle,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TricolorRed,
@@ -256,7 +259,7 @@ fun GameOverDialog(
                 )
 
                 Text(
-                    text = "Nu mai ai mutări disponibile.",
+                    text = Localization.strings.gameOverDesc,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -269,7 +272,7 @@ fun GameOverDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "🏆 RECORD NOU! $score",
+                            text = Localization.strings.gameOverNewRecord + "$score",
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent,
                             fontSize = 16.sp,
@@ -280,7 +283,7 @@ fun GameOverDialog(
                 } else {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Scor final: $score\nRecord: $highScore",
+                        text = Localization.strings.gameOverScore(score, highScore),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
@@ -299,7 +302,7 @@ fun GameOverDialog(
                             .testTag("gameover_btn_continue")
                     ) {
                         Text(
-                            text = "🎬 CONTINUĂ (RECLAMĂ)",
+                            text = if (isAdsRemoved) Localization.strings.continueGameBtn else Localization.strings.continueAdBtn,
                             color = Color.Black,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -313,7 +316,7 @@ fun GameOverDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
                     modifier = Modifier.fillMaxWidth().testTag("gameover_btn_restart")
                 ) {
-                    Text("🔄 JOACĂ DIN NOU", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(Localization.strings.btnPlayAgain, color = Color.White, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -322,7 +325,7 @@ fun GameOverDialog(
                     onClick = onHome,
                     modifier = Modifier.fillMaxWidth().testTag("gameover_btn_home")
                 ) {
-                    Text("🏠 MENIU PRINCIPAL")
+                    Text(Localization.strings.btnHome)
                 }
             }
         }
@@ -331,6 +334,7 @@ fun GameOverDialog(
 
 @Composable
 fun ExtraUndoDialog(
+    isAdsRemoved: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -338,14 +342,17 @@ fun ExtraUndoDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "🎬 Undo Suplimentar",
+                text = if (isAdsRemoved) Localization.strings.extraUndoTitle else Localization.strings.extraUndoTitle,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
         },
         text = {
             Text(
-                text = "Ai consumat cele 3 Undo-uri gratuite ale acestei partide. Vizionează o reclamă scurtă pentru a primi 1 Undo suplimentar!"
+                text = if (isAdsRemoved)
+                    Localization.strings.extraUndoDescFree
+                else
+                    Localization.strings.extraUndoDescAd
             )
         },
         confirmButton = {
@@ -355,7 +362,7 @@ fun ExtraUndoDialog(
                 modifier = Modifier.testTag("btn_confirm_extra_undo")
             ) {
                 Text(
-                    text = "🎬 VEZI RECLAMĂ (+1 UNDO)",
+                    text = if (isAdsRemoved) Localization.strings.extraUndoBtnFree else Localization.strings.extraUndoBtnAd,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -366,7 +373,7 @@ fun ExtraUndoDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_extra_undo")
             ) {
-                Text(text = "ANULEAZĂ")
+                Text(text = Localization.strings.btnCancel)
             }
         },
         shape = RoundedCornerShape(18.dp)
@@ -397,7 +404,7 @@ fun LevelCompleteDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "NIVEL COMPLETAT!",
+                    text = Localization.strings.levelCompleteTitle,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = GoldAccent,
@@ -424,12 +431,12 @@ fun LevelCompleteDialog(
                         modifier = Modifier.padding(12.dp)
                     ) {
                         Text(
-                            text = "🎁 Recompensă deblocată:",
+                            text = Localization.strings.rewardUnlocked,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "${level.rewardName} (+${level.rewardBonus} puncte)",
+                            text = "${level.rewardName} (+${level.rewardBonus}" + Localization.strings.pointsSuffix + ")",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -444,7 +451,7 @@ fun LevelCompleteDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = TricolorBlue),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("▶ CONTINUĂ", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(Localization.strings.btnContinuePlaying, color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -460,13 +467,13 @@ fun ResetConfirmDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "⚠️ Resetare Progres",
+                text = Localization.strings.resetProgressTitle,
                 fontWeight = FontWeight.Bold,
                 color = TricolorRed
             )
         },
         text = {
-            Text(text = "Ești absolut sigur că vrei să ștergi TOT progresul, nivelurile și realizările? Această acțiune nu poate fi anulată!")
+            Text(text = Localization.strings.resetProgressDesc)
         },
         confirmButton = {
             Button(
@@ -474,7 +481,7 @@ fun ResetConfirmDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = TricolorRed),
                 modifier = Modifier.testTag("btn_confirm_reset_all")
             ) {
-                Text(text = "DA, RESETEAZĂ TOT", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(text = Localization.strings.resetProgressConfirm, color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -482,7 +489,7 @@ fun ResetConfirmDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("btn_cancel_reset_all")
             ) {
-                Text(text = "ANULEAZĂ")
+                Text(text = Localization.strings.btnCancel)
             }
         }
     )

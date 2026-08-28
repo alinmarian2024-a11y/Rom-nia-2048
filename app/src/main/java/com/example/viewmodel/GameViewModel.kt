@@ -1,5 +1,7 @@
 package com.example.viewmodel
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -91,39 +93,43 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val isVibrationEnabled = MutableStateFlow(repository.isVibrationEnabled())
     val themePreference = MutableStateFlow(repository.getThemePreference())
     val isRomanianTheme = MutableStateFlow(repository.isRomanianThemeEnabled())
+
+    private val _currentLanguage = MutableStateFlow(repository.getLanguage())
+    val currentLanguage: StateFlow<Language> = _currentLanguage.asStateFlow()
     val isAnimationsEnabled = MutableStateFlow(repository.isAnimationsEnabled())
     val isConfirmRestart = MutableStateFlow(repository.isConfirmRestartEnabled())
 
     // 25 Achievements definition
     val allAchievementsList = listOf(
-        Achievement("1", "🥨", "PRIMUL COVRIG", "Obține prima piesă de nivel 2.", maxProgress = 1),
-        Achievement("2", "🥧", "POFTA VINE MÂNCÂND", "Obține piesa 4.", maxProgress = 1),
-        Achievement("3", "🥣", "MĂMĂLIGAR DEVOTAT", "Obține piesa 8.", maxProgress = 1),
-        Achievement("4", "🧀", "BRÂNZĂ BUNA", "Obține piesa 16.", maxProgress = 1),
-        Achievement("5", "🍗", "MAESTRU AL COPANELOR", "Obține piesa 32.", maxProgress = 1),
-        Achievement("6", "🥘", "REGELE SARMALELOR", "Obține piesa 64.", maxProgress = 1),
-        Achievement("7", "🍲", "MASTERCHEF ROMÂN", "Obține piesa 128.", maxProgress = 1),
-        Achievement("8", "☕", "CAFEAUA DE DIMINEAȚĂ", "Obține piesa 256.", maxProgress = 1),
-        Achievement("9", "🏰", "TURIST ÎN ROMÂNIA", "Obține piesa 512.", maxProgress = 1),
-        Achievement("10", "🏛️", "BOIER MODERN", "Obține piesa 1024.", maxProgress = 1),
-        Achievement("11", "🇷🇴", "PATRIOT", "Ajunge la piesa 2048.", maxProgress = 1),
-        Achievement("12", "🌟", "LUCEAFĂRUL JOCULUI", "Ajunge la piesa 4096.", maxProgress = 1),
-        Achievement("13", "🦅", "VULTURUL CARPAȚILOR", "Ajunge la piesa 8192.", maxProgress = 1),
-        Achievement("14", "🔥", "NU MĂ OPRESC", "Continuă jocul după atingerea 2048.", maxProgress = 1),
-        Achievement("15", "💪", "ÎNCĂ O DATĂ", "Folosește UNDO de 3 ori într-un joc.", maxProgress = 3),
-        Achievement("16", "🧠", "STRATEG", "Realizează 10 mutări valide.", maxProgress = 10),
-        Achievement("17", "🏆", "MAESTRU 2048", "Obține un scor peste 10.000 de puncte.", maxProgress = 10000),
-        Achievement("18", "🥇", "LEGENDĂ RURALĂ", "Obține un scor peste 25.000 de puncte.", maxProgress = 25000),
-        Achievement("19", "👑", "REGELE ROMÂNIEI", "Obține un scor peste 50.000 de puncte.", maxProgress = 50000),
-        Achievement("20", "🗺", "EXPLORATOR", "Deblochează cel puțin 5 niveluri.", maxProgress = 5),
-        Achievement("21", "🎨", "COLECȚIONAR HARNIC", "Deblochează 8 piese în Colecție.", maxProgress = 8),
-        Achievement("22", "⚡", "VITEZĂ SUPREMĂ", "Efectuează 50 de mutări.", maxProgress = 50),
-        Achievement("23", "🔄", "REÎNCEPUT PROSPER", "Începe un joc nou după ce ai obținut un scor bun.", maxProgress = 1),
-        Achievement("24", "🌙", "NOPȚI ALBE", "Comută aplicația în modul Dark.", maxProgress = 1),
-        Achievement("25", "🇷🇴", "INIMĂ DE ROMÂN", "Completează toate nivelurile din joc.", maxProgress = 7)
+        Achievement("1", "🥨", { Localization.strings.getAchievementTitle("1") }, { Localization.strings.getAchievementDesc("1") }, maxProgress = 1),
+        Achievement("2", "🥧", { Localization.strings.getAchievementTitle("2") }, { Localization.strings.getAchievementDesc("2") }, maxProgress = 1),
+        Achievement("3", "🥣", { Localization.strings.getAchievementTitle("3") }, { Localization.strings.getAchievementDesc("3") }, maxProgress = 1),
+        Achievement("4", "🧀", { Localization.strings.getAchievementTitle("4") }, { Localization.strings.getAchievementDesc("4") }, maxProgress = 1),
+        Achievement("5", "🍗", { Localization.strings.getAchievementTitle("5") }, { Localization.strings.getAchievementDesc("5") }, maxProgress = 1),
+        Achievement("6", "🥘", { Localization.strings.getAchievementTitle("6") }, { Localization.strings.getAchievementDesc("6") }, maxProgress = 1),
+        Achievement("7", "🍲", { Localization.strings.getAchievementTitle("7") }, { Localization.strings.getAchievementDesc("7") }, maxProgress = 1),
+        Achievement("8", "☕", { Localization.strings.getAchievementTitle("8") }, { Localization.strings.getAchievementDesc("8") }, maxProgress = 1),
+        Achievement("9", "🏰", { Localization.strings.getAchievementTitle("9") }, { Localization.strings.getAchievementDesc("9") }, maxProgress = 1),
+        Achievement("10", "🏛️", { Localization.strings.getAchievementTitle("10") }, { Localization.strings.getAchievementDesc("10") }, maxProgress = 1),
+        Achievement("11", "🇷🇴", { Localization.strings.getAchievementTitle("11") }, { Localization.strings.getAchievementDesc("11") }, maxProgress = 1),
+        Achievement("12", "🌟", { Localization.strings.getAchievementTitle("12") }, { Localization.strings.getAchievementDesc("12") }, maxProgress = 1),
+        Achievement("13", "🦅", { Localization.strings.getAchievementTitle("13") }, { Localization.strings.getAchievementDesc("13") }, maxProgress = 1),
+        Achievement("14", "🔥", { Localization.strings.getAchievementTitle("14") }, { Localization.strings.getAchievementDesc("14") }, maxProgress = 1),
+        Achievement("15", "💪", { Localization.strings.getAchievementTitle("15") }, { Localization.strings.getAchievementDesc("15") }, maxProgress = 3),
+        Achievement("16", "🧠", { Localization.strings.getAchievementTitle("16") }, { Localization.strings.getAchievementDesc("16") }, maxProgress = 10),
+        Achievement("17", "🏆", { Localization.strings.getAchievementTitle("17") }, { Localization.strings.getAchievementDesc("17") }, maxProgress = 10000),
+        Achievement("18", "🥇", { Localization.strings.getAchievementTitle("18") }, { Localization.strings.getAchievementDesc("18") }, maxProgress = 25000),
+        Achievement("19", "👑", { Localization.strings.getAchievementTitle("19") }, { Localization.strings.getAchievementDesc("19") }, maxProgress = 50000),
+        Achievement("20", "🗺", { Localization.strings.getAchievementTitle("20") }, { Localization.strings.getAchievementDesc("20") }, maxProgress = 5),
+        Achievement("21", "🎨", { Localization.strings.getAchievementTitle("21") }, { Localization.strings.getAchievementDesc("21") }, maxProgress = 8),
+        Achievement("22", "⚡", { Localization.strings.getAchievementTitle("22") }, { Localization.strings.getAchievementDesc("22") }, maxProgress = 50),
+        Achievement("23", "🔄", { Localization.strings.getAchievementTitle("23") }, { Localization.strings.getAchievementDesc("23") }, maxProgress = 1),
+        Achievement("24", "🌙", { Localization.strings.getAchievementTitle("24") }, { Localization.strings.getAchievementDesc("24") }, maxProgress = 1),
+        Achievement("25", "🇷🇴", { Localization.strings.getAchievementTitle("25") }, { Localization.strings.getAchievementDesc("25") }, maxProgress = 7)
     )
 
     init {
+        Localization.language = _currentLanguage.value
         loadSavedState()
         syncAudioSettings()
     }
@@ -139,6 +145,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             val initialTiles = syncTilesFromGrid(loadedState.grid)
             _gameState.value = loadedState.copy(tiles = initialTiles)
         }
+    }
+
+    
+    fun toggleLanguage() {
+        val newLang = if (_currentLanguage.value == Language.RO) Language.EN else Language.RO
+        Localization.language = newLang
+        _currentLanguage.value = newLang
+        repository.saveLanguage(newLang)
     }
 
     fun selectGameMode(mode: GameMode) {
@@ -778,6 +792,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelRestartDialog() {
         soundManager.playTap()
         _showRestartDialog.value = false
+    }
+
+    fun dismissGameOver() {
+        _gameState.value = _gameState.value.copy(isGameOver = false)
+        repository.saveGameState(_gameState.value)
     }
 
     fun confirmRestart() {

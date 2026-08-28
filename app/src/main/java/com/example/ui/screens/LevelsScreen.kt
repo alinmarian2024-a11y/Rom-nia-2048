@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +72,7 @@ fun LevelsScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -78,7 +80,7 @@ fun LevelsScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "🗺 NIVELURI",
+                text = Localization.strings.levelsTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -88,7 +90,7 @@ fun LevelsScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Progresează prin nivelurile României combinând piese și atingând obiectivele stabilite!",
+            text = Localization.strings.levelsSubtitle,
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -156,13 +158,13 @@ fun LevelsScreen(
                             Spacer(modifier = Modifier.height(2.dp))
 
                             Text(
-                                text = "Obiectiv: Descoperă Piesa ${level.targetTile} (${targetItem.name})",
+                                text = Localization.strings.levelObjectivePrefix + "${level.targetTile} (${targetItem.name})",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             Text(
-                                text = "Recompensă: ${level.rewardName}",
+                                text = Localization.strings.levelRewardPrefix + level.rewardName,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = GoldAccent
@@ -181,7 +183,7 @@ fun LevelsScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
                                     Text(
-                                        text = if (isCompleted) "REJOACĂ" else "JOACĂ",
+                                        text = if (isCompleted) Localization.strings.levelBtnReplay else Localization.strings.levelBtnPlay,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isCompleted) Color.Black else Color.White
@@ -190,7 +192,7 @@ fun LevelsScreen(
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Lock,
-                                    contentDescription = "Blocat",
+                                    contentDescription = Localization.strings.contentDescLocked,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }

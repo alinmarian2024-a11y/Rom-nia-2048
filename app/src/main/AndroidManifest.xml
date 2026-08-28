@@ -25,6 +25,11 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-4075616059615853~5438280030"/>
 
+        <!-- Disable Firebase Analytics to prevent missing google_app_id logs -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+
 
         <activity
             android:name=".MainActivity"

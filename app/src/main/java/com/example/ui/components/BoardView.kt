@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
@@ -141,18 +143,21 @@ fun BoardView(
                 .testTag("board_grid")
         ) {
             BoxWithConstraints(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(2.dp)
             ) {
                 val spacing = 8.dp
-                val cellSize = (maxWidth - spacing * 3) / 4
+                val boardSize = minOf(maxWidth, maxHeight)
+                val cellSize = (boardSize - spacing * 3) / 4
 
-                // 1. Static empty cells background grid
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(spacing),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                Box(modifier = Modifier.size(boardSize)) {
+                    // 1. Static empty cells background grid
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(spacing),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                     for (r in 0..3) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing),
@@ -208,6 +213,7 @@ fun BoardView(
                         }
                     }
                 }
+                }
             }
         }
 
@@ -237,7 +243,7 @@ fun BoardView(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowUpward,
-                        contentDescription = "Sus"
+                        contentDescription = Localization.strings.dpadUp
                     )
                 }
 
@@ -261,7 +267,7 @@ fun BoardView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Stânga"
+                            contentDescription = Localization.strings.dpadLeft
                         )
                     }
 
@@ -281,7 +287,7 @@ fun BoardView(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowDownward,
-                            contentDescription = "Jos"
+                            contentDescription = Localization.strings.dpadDown
                         )
                     }
 
@@ -301,7 +307,7 @@ fun BoardView(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Dreapta"
+                            contentDescription = Localization.strings.dpadRight
                         )
                     }
                 }

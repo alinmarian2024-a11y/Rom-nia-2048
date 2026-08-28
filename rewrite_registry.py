@@ -1,35 +1,10 @@
-package com.example.model
+import re
 
-import com.example.ui.strings.Localization
-import com.example.ui.strings.Language
-import androidx.compose.ui.graphics.Color
+with open("app/src/main/java/com/example/model/GameModels.kt", "r") as f:
+    content = f.read()
 
-data class Tile(
-    val id: Long,
-    val value: Int,
-    val row: Int,
-    val col: Int,
-    val isNew: Boolean = false,
-    val isMerged: Boolean = false
-)
-
-data class RomaniaItem(
-    val value: Int,
-    val emoji: String,
-    val nameKey: () -> String,
-    val descriptionKey: () -> String,
-    val levelUnlocked: Int,
-    val backgroundColor: Color,
-    val textColor: Color,
-    val badgeKey: () -> String
-) {
-    val name: String get() = nameKey()
-    val description: String get() = descriptionKey()
-    val badge: String get() = badgeKey()
-}
-
-object TileRegistry {
-    val items = mapOf(
+# Replace TileRegistry items
+new_registry = """    val items = mapOf(
         2 to RomaniaItem(2, "🥨", { Localization.strings.reg2name }, { Localization.strings.reg2desc }, 1, Color(0xFFFEF9C3), Color(0xFF713F12), { Localization.strings.reg2badge }),
         4 to RomaniaItem(4, "🥧", { Localization.strings.reg4name }, { Localization.strings.reg4desc }, 1, Color(0xFFFDE68A), Color(0xFF78350F), { Localization.strings.reg4badge }),
         8 to RomaniaItem(8, "🥣", { Localization.strings.reg8name }, { Localization.strings.reg8desc }, 1, Color(0xFFFED7AA), Color(0xFF7C2D12), { Localization.strings.reg8badge }),
@@ -45,8 +20,11 @@ object TileRegistry {
         8192 to RomaniaItem(8192, "🦅", { Localization.strings.reg8192name }, { Localization.strings.reg8192desc }, 7, Color(0xFF4338CA), Color(0xFFFFFFFF), { Localization.strings.reg8192badge }),
         16384 to RomaniaItem(16384, "👑", { Localization.strings.reg16384name }, { Localization.strings.reg16384desc }, 7, Color(0xFF991B1B), Color(0xFFFFFFFF), { Localization.strings.reg16384badge })
     )
+"""
+content = re.sub(r'    val items = mapOf\([\s\S]*?    fun getItem', new_registry + '\n    fun getItem', content)
 
-    fun getItem(value: Int): RomaniaItem {
+# Replace getItem fallback
+new_fallback = """    fun getItem(value: Int): RomaniaItem {
         return items[value] ?: RomaniaItem(
             value = value,
             emoji = "✨",
@@ -57,27 +35,11 @@ object TileRegistry {
             textColor = Color(0xFFFFFFFF),
             badgeKey = { Localization.strings.fallbackBadge }
         )
-    }
-}
+    }"""
+content = re.sub(r'    fun getItem\(value: Int\): RomaniaItem \{[\s\S]*?    \}', new_fallback, content)
 
-enum class GameMode {
-    INFINITE,
-    ADVENTURE
-}
-
-data class GameLevel(
-    val levelNumber: Int,
-    val titleKey: () -> String,
-    val targetTile: Int,
-    val minScore: Int = 0,
-    val rewardNameKey: () -> String = { "" },
-    val rewardBonus: Int = 0
-) {
-    val title: String get() = titleKey()
-    val rewardName: String get() = rewardNameKey()
-}
-
-val GAME_LEVELS = listOf(
+# Replace GAME_LEVELS
+new_levels = """val GAME_LEVELS = listOf(
     GameLevel(1, { Localization.strings.gameLevel1Name }, 8, 100, { Localization.strings.gameLevel1Reward }, 100),
     GameLevel(2, { Localization.strings.gameLevel2Name }, 16, 250, { Localization.strings.gameLevel2Reward }, 250),
     GameLevel(3, { Localization.strings.gameLevel3Name }, 32, 500, { Localization.strings.gameLevel3Reward }, 500),
@@ -90,42 +52,8 @@ val GAME_LEVELS = listOf(
     GameLevel(10, { Localization.strings.gameLevel10Name }, 4096, 60000, { Localization.strings.gameLevel10Reward }, 20000),
     GameLevel(11, { Localization.strings.gameLevel11Name }, 8192, 120000, { Localization.strings.gameLevel11Reward }, 35000),
     GameLevel(12, { Localization.strings.gameLevel12Name }, 16384, 250000, { Localization.strings.gameLevel12Reward }, 50000)
-)
+)"""
+content = re.sub(r'val GAME_LEVELS = listOf\([\s\S]*?\)\n\ndata class', new_levels + '\n\ndata class', content)
 
-data class Achievement(
-    val id: String,
-    val emoji: String,
-    val titleKey: () -> String,
-    val descriptionKey: () -> String,
-    val isUnlocked: Boolean = false,
-    val progress: Int = 0,
-    val maxProgress: Int = 1
-) {
-    val title: String get() = titleKey()
-    val description: String get() = descriptionKey()
-}
-
-data class GridSnapshot(
-    val grid: List<List<Int>>,
-    val score: Int
-)
-
-data class GameState(
-    val gameMode: GameMode = GameMode.INFINITE,
-    val grid: List<List<Int>> = List(4) { List(4) { 0 } },
-    val tiles: List<Tile> = emptyList(),
-    val score: Int = 0,
-    val highScore: Int = 0,
-    val currentLevel: Int = 1,
-    val highestTileAchieved: Int = 0,
-    val movesCount: Int = 0,
-    val undoCount: Int = 0,
-    val isGameOver: Boolean = false,
-    val isWon: Boolean = false,
-    val keepPlayingPast2048: Boolean = false,
-    val undoStack: List<GridSnapshot> = emptyList(),
-    val unlockedLevels: Set<Int> = setOf(1),
-    val completedLevels: Set<Int> = emptySet(),
-    val unlockedCollectionValues: Set<Int> = setOf(2),
-    val unlockedAchievementIds: Set<Int> = emptySet()
-)
+with open("app/src/main/java/com/example/model/GameModels.kt", "w") as f:
+    f.write(content)

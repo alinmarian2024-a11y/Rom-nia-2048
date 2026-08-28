@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -64,7 +66,7 @@ fun AchievementToast(
                     Spacer(modifier = Modifier.width(12.dp))
                     androidx.compose.foundation.layout.Column {
                         Text(
-                            text = "🏆 REALIZARE DEBLOCATĂ!",
+                            text = Localization.strings.achievementUnlocked,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent

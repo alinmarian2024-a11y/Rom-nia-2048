@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.strings.Localization
+import com.example.ui.strings.Language
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -82,7 +84,7 @@ fun SettingsScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Înapoi",
+                    contentDescription = Localization.strings.contentDescBack,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -90,7 +92,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "⚙ SETĂRI",
+                text = Localization.strings.settingsTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -107,7 +109,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "AUDIO & VIBRAȚII",
+                    text = Localization.strings.audioSection,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -116,7 +118,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("🎵 VOLUM MUZICĂ: ${ (musicVol * 100).toInt() }%", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.musicVol + "${ (musicVol * 100).toInt() }%", fontWeight = FontWeight.Medium)
                     Slider(
                         value = musicVol,
                         onValueChange = { viewModel.setMusicVolume(it) },
@@ -126,7 +128,7 @@ fun SettingsScreen(
                 }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("🔊 VOLUM EFECTE SONORE: ${ (sfxVol * 100).toInt() }%", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.sfxVol + "${ (sfxVol * 100).toInt() }%", fontWeight = FontWeight.Medium)
                     Slider(
                         value = sfxVol,
                         onValueChange = { viewModel.setSfxVolume(it) },
@@ -140,7 +142,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("🔔 VIBRAȚII", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.vibration, fontWeight = FontWeight.Medium)
                     Switch(
                         checked = isVibration,
                         onCheckedChange = { viewModel.setVibration(it) },
@@ -160,7 +162,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "🌙 TEMĂ VIZUALĂ",
+                    text = Localization.strings.visualSection,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -175,19 +177,19 @@ fun SettingsScreen(
                     FilterChip(
                         selected = themePref == "LIGHT",
                         onClick = { viewModel.setTheme("LIGHT") },
-                        label = { Text("LIGHT") },
+                        label = { Text(Localization.strings.themeLight) },
                         modifier = Modifier.weight(1f).testTag("chip_theme_light")
                     )
                     FilterChip(
                         selected = themePref == "DARK",
                         onClick = { viewModel.setTheme("DARK") },
-                        label = { Text("DARK") },
+                        label = { Text(Localization.strings.themeDark) },
                         modifier = Modifier.weight(1f).testTag("chip_theme_dark")
                     )
                     FilterChip(
                         selected = themePref == "SYSTEM",
                         onClick = { viewModel.setTheme("SYSTEM") },
-                        label = { Text("SYSTEM") },
+                        label = { Text(Localization.strings.themeSystem) },
                         modifier = Modifier.weight(1f).testTag("chip_theme_system")
                     )
                 }
@@ -199,7 +201,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("🎨 TEMĂ ROMÂNEASCĂ", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.romanianTheme, fontWeight = FontWeight.Medium)
                     Switch(
                         checked = isRomanianTheme,
                         onCheckedChange = { viewModel.setRomanianTheme(it) },
@@ -219,7 +221,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "⚡ PREFERINȚE JOC",
+                    text = Localization.strings.gamePrefsSection,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -232,7 +234,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("⚡ ANIMAȚII", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.animations, fontWeight = FontWeight.Medium)
                     Switch(
                         checked = isAnimations,
                         onCheckedChange = { viewModel.setAnimations(it) },
@@ -245,7 +247,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("CONFIRMĂ RESTART", fontWeight = FontWeight.Medium)
+                    Text(Localization.strings.confirmRestartPref, fontWeight = FontWeight.Medium)
                     Switch(
                         checked = isConfirmRestart,
                         onCheckedChange = { viewModel.setConfirmRestartPref(it) },
@@ -288,7 +290,7 @@ fun SettingsScreen(
                 .testTag("btn_reset_progress")
         ) {
             Text(
-                text = "🗑️ RESETARE PROGRES",
+                text = Localization.strings.resetSection,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
