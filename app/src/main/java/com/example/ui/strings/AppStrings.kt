@@ -58,6 +58,9 @@ interface AppStrings {
     val billingAdsAlreadyRemoved: String
     fun billingError(msg: String): String
     val billingSuccess: String
+    val billingRestoredSuccess: String
+    val billingNoPurchaseFound: String
+    val adNotReady: String
     val pointsSuffix: String
     val contentDescPlay: String
     val contentDescPurchased: String

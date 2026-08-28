@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.ui.components.ExtraUndoDialog
 import com.example.ui.components.GameOverDialog
 import com.example.ui.components.LevelCompleteDialog
+import com.example.ui.components.StatusMessageDialog
 import com.example.ui.components.RestartConfirmDialog
 import com.example.ui.components.VictoryDialog
 import com.example.ui.screens.AboutScreen
@@ -104,8 +106,17 @@ fun MainAppContent(
 
     val isAdsRemoved by viewModel.isAdsRemoved.collectAsState()
     val showExtraUndoDialog by viewModel.showExtraUndoDialog.collectAsState()
+    val billingStatusMessage by viewModel.billingStatusMessage.collectAsState()
+    val adStatusMessage by viewModel.adStatusMessage.collectAsState()
+
     val context = LocalContext.current
     val activity = context as? Activity
+
+    LaunchedEffect(activity) {
+        activity?.let {
+            viewModel.requestConsent(it)
+        }
+    }
 
     // Handle back button behavior
     BackHandler(enabled = currentScreen != AppScreen.HOME) {
@@ -137,7 +148,7 @@ fun MainAppContent(
                 gameState = gameState,
                 onNavigate = { viewModel.navigateTo(it) },
                 onSelectLevel = { levelNum ->
-                    viewModel.startAdventureLevel(levelNum)
+                    viewModel.startAdventureLevel(levelNum, activity)
                 }
             )
             AppScreen.COLLECTION -> CollectionScreen(
@@ -168,7 +179,7 @@ fun MainAppContent(
         // Global Dialog Overlays
         if (showRestartDialog) {
             RestartConfirmDialog(
-                onConfirm = { viewModel.confirmRestart() },
+                onConfirm = { viewModel.confirmRestart(activity) },
                 onDismiss = { viewModel.cancelRestartDialog() }
             )
         }
@@ -176,7 +187,7 @@ fun MainAppContent(
         if (showVictoryDialog) {
             VictoryDialog(
                 onContinue = { viewModel.continuePlayingPast2048() },
-                onRestart = { viewModel.confirmRestart() },
+                onRestart = { viewModel.confirmRestart(activity) },
                 onHome = { viewModel.navigateTo(AppScreen.HOME) }
             )
         }
@@ -187,7 +198,7 @@ fun MainAppContent(
                 highScore = gameState.highScore,
                 onContinueGame = activity?.let { act -> { viewModel.handleGameOverContinue(act) } },
                 isAdsRemoved = isAdsRemoved,
-                onRestart = { viewModel.confirmRestart() },
+                onRestart = { viewModel.confirmRestart(activity) },
                 onHome = { 
                     viewModel.dismissGameOver()
                     viewModel.navigateTo(AppScreen.HOME) 
@@ -209,6 +220,20 @@ fun MainAppContent(
             LevelCompleteDialog(
                 level = level,
                 onDismiss = { viewModel.dismissLevelCompleteDialog() }
+            )
+        }
+
+        billingStatusMessage?.let { msg ->
+            StatusMessageDialog(
+                message = msg,
+                onDismiss = { viewModel.billingManager.clearStatusMessage() }
+            )
+        }
+
+        adStatusMessage?.let { msg ->
+            StatusMessageDialog(
+                message = msg,
+                onDismiss = { viewModel.adManager.clearStatusMessage() }
             )
         }
     }

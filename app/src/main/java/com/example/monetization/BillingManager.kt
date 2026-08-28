@@ -153,6 +153,9 @@ class BillingManager(
             .build()
 
         val result = billingClient.launchBillingFlow(activity, billingFlowParams)
+        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+            _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingError(result.debugMessage)
+        }
         return result.responseCode == BillingClient.BillingResponseCode.OK
     }
 
@@ -202,7 +205,36 @@ class BillingManager(
     }
 
     fun restorePurchases() {
-        queryPurchases()
+        if (!billingClient.isReady) {
+            _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingNotConnected
+            startConnection()
+            return
+        }
+        val queryPurchasesParams = QueryPurchasesParams.newBuilder()
+            .setProductType(BillingClient.ProductType.INAPP)
+            .build()
+        billingClient.queryPurchasesAsync(queryPurchasesParams) { billingResult, purchases ->
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                var foundAdsRemoved = false
+                for (purchase in purchases) {
+                    if (purchase.products.contains(PRODUCT_REMOVE_ADS) &&
+                        purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                    ) {
+                        foundAdsRemoved = true
+                        handlePurchase(purchase)
+                    }
+                }
+                if (foundAdsRemoved) {
+                    _isAdsRemoved.value = true
+                    onAdsRemovedStateChanged(true)
+                    _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingRestoredSuccess
+                } else {
+                    _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingNoPurchaseFound
+                }
+            } else {
+                _billingStatusMessage.value = com.example.ui.strings.Localization.strings.billingError(billingResult.debugMessage)
+            }
+        }
     }
 
     fun release() {

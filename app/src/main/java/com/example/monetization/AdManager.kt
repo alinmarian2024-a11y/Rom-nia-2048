@@ -60,6 +60,13 @@ private val INTERSTITIAL_AD_UNIT_ID =
     private val _isInterstitialReady = MutableStateFlow(false)
     val isInterstitialReady: StateFlow<Boolean> = _isInterstitialReady.asStateFlow()
 
+    private val _adStatusMessage = MutableStateFlow<String?>(null)
+    val adStatusMessage: StateFlow<String?> = _adStatusMessage.asStateFlow()
+
+    fun clearStatusMessage() {
+        _adStatusMessage.value = null
+    }
+
     /**
      * Call only after UMP says ads may be requested. The method is idempotent.
      */
@@ -113,6 +120,7 @@ private val INTERSTITIAL_AD_UNIT_ID =
         val ad = rewardedAd
         if (ad == null) {
             Log.w(TAG, "Rewarded ad not ready.")
+            _adStatusMessage.value = com.example.ui.strings.Localization.strings.adNotReady
             loadRewardedAd()
             onClosedOrFailed()
             return
@@ -139,6 +147,7 @@ private val INTERSTITIAL_AD_UNIT_ID =
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 Log.w(TAG, "Rewarded ad failed to show: ${adError.message}")
+                _adStatusMessage.value = com.example.ui.strings.Localization.strings.adNotReady
                 finishWithoutReward()
                 loadRewardedAd()
             }
@@ -155,6 +164,7 @@ private val INTERSTITIAL_AD_UNIT_ID =
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error showing rewarded ad", e)
+            _adStatusMessage.value = com.example.ui.strings.Localization.strings.adNotReady
             finishWithoutReward()
             loadRewardedAd()
         }

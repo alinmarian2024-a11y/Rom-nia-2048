@@ -38,6 +38,25 @@ import com.example.ui.theme.TricolorBlue
 import com.example.ui.theme.TricolorRed
 
 @Composable
+fun StatusMessageDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = {
+            Text(text = message, fontSize = 16.sp)
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "OK")
+            }
+        },
+        shape = RoundedCornerShape(18.dp)
+    )
+}
+
+@Composable
 fun RestartConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit

@@ -55,6 +55,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val formattedPrice: StateFlow<String?> = billingManager.formattedPrice
     val billingStatusMessage: StateFlow<String?> = billingManager.billingStatusMessage
     val isAdReady: StateFlow<Boolean> = adManager.isAdReady
+    val adStatusMessage: StateFlow<String?> = adManager.adStatusMessage
     val isPrivacyOptionsRequired: StateFlow<Boolean> = consentManager.isPrivacyOptionsRequired
 
     private val _showExtraUndoDialog = MutableStateFlow(false)
@@ -177,27 +178,35 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startAdventureLevel(levelNum: Int) {
+    fun startAdventureLevel(levelNum: Int, activity: Activity? = null) {
         soundManager.playTap()
-        val current = _gameState.value
-        val newGrid = createNewGameGrid()
-        val newTiles = syncTilesFromGrid(newGrid)
+        val action = {
+            val current = _gameState.value
+            val newGrid = createNewGameGrid()
+            val newTiles = syncTilesFromGrid(newGrid)
 
-        val newState = current.copy(
-            gameMode = GameMode.ADVENTURE,
-            currentLevel = levelNum,
-            grid = newGrid,
-            tiles = newTiles,
-            score = 0,
-            isGameOver = false,
-            isWon = false,
-            undoStack = emptyList()
-        )
+            val newState = current.copy(
+                gameMode = GameMode.ADVENTURE,
+                currentLevel = levelNum,
+                grid = newGrid,
+                tiles = newTiles,
+                score = 0,
+                isGameOver = false,
+                isWon = false,
+                undoStack = emptyList()
+            )
 
-        _gameState.value = newState
-        repository.saveGameState(newState)
-        _currentScreen.value = AppScreen.GAME
-        if (isMusicEnabled.value) soundManager.startMusic(isGameplay = true)
+            _gameState.value = newState
+            repository.saveGameState(newState)
+            _currentScreen.value = AppScreen.GAME
+            if (isMusicEnabled.value) soundManager.startMusic(isGameplay = true)
+        }
+
+        if (activity != null) {
+            runInterstitialThen(activity, action)
+        } else {
+            action()
+        }
     }
 
     fun syncTilesFromGrid(grid: List<List<Int>>, existingTiles: List<Tile> = emptyList()): List<Tile> {
@@ -799,28 +808,36 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         repository.saveGameState(_gameState.value)
     }
 
-    fun confirmRestart() {
+    fun confirmRestart(activity: Activity? = null) {
         soundManager.playTap()
         _showRestartDialog.value = false
         _showPauseModal.value = false
         _showVictoryDialog.value = false
 
-        val current = _gameState.value
-        val newGrid = createNewGameGrid()
-        val newTiles = syncTilesFromGrid(newGrid)
+        val action = {
+            val current = _gameState.value
+            val newGrid = createNewGameGrid()
+            val newTiles = syncTilesFromGrid(newGrid)
 
-        val newState = current.copy(
-            grid = newGrid,
-            tiles = newTiles,
-            score = 0,
-            isGameOver = false,
-            isWon = false,
-            keepPlayingPast2048 = false,
-            undoStack = emptyList()
-        )
+            val newState = current.copy(
+                grid = newGrid,
+                tiles = newTiles,
+                score = 0,
+                isGameOver = false,
+                isWon = false,
+                keepPlayingPast2048 = false,
+                undoStack = emptyList()
+            )
 
-        _gameState.value = newState
-        repository.saveGameState(newState)
+            _gameState.value = newState
+            repository.saveGameState(newState)
+        }
+
+        if (activity != null) {
+            runInterstitialThen(activity, action)
+        } else {
+            action()
+        }
     }
 
     fun togglePause() {
